@@ -1,6 +1,6 @@
 # Pandora — Kućni Sigurnosni Sustav
 
-Monorepo za Pandora projekt: mobilna aplikacija, web dashboard i backend API.
+Pandora projekt: mobilna aplikacija, web dashboard i backend API.
 
 ## Struktura projekta
 
@@ -46,6 +46,3 @@ Skeniraj QR kod s Expo Go aplikacijom na mobitelu.
 4. Otvori Pull Request na GitHubu
 5. Barem 1 osoba mora odobriti prije mergea
 
-## Tim
-
-- 6 članova — 3. godina računarstva
