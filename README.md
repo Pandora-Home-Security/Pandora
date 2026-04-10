@@ -36,6 +36,7 @@ npm run dev
 Web app se pokreće na `http://localhost:5173`
 
 ### Mobile
+Za pregled mobilne verzije instaliraj aplikaciju "Expo Go" 
 ```bash
 cd mobile
 npm install
