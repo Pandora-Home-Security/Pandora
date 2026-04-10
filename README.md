@@ -14,6 +14,11 @@ pandora/
 
 ## Brzi start
 
+### Kloniraj
+```bash
+git clone https://github.com/TVOJ-USERNAME/pandora.git
+```
+
 ### Backend
 ```bash
 cd backend
