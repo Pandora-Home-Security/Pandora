@@ -1,0 +1,163 @@
+/*
+ * Minimalni placeholder stil za dashboard.
+ * Koristi iste CSS varijable (--bg-deep, --accent itd.) koje su definirane u LoginPage.css
+ * i globalno su dostupne jer se LoginPage.css loada kao dio app bundle-a.
+ * Pravi dashboard stil dolazi u M2 milestone-u.
+ */
+
+.dashboard-page {
+  min-height: 100vh;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Header ===== */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 2rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dashboard-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--accent);
+}
+
+.dashboard-shield {
+  width: 32px;
+  height: 32px;
+}
+
+.dashboard-brand h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--border-hover);
+  color: var(--text-secondary);
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.logout-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ===== Main ===== */
+.dashboard-main {
+  flex: 1;
+  padding: 2.5rem 2rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.dashboard-welcome {
+  margin-bottom: 2.5rem;
+}
+
+.dashboard-welcome h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dashboard-welcome p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.dashboard-welcome strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ===== Cards Grid ===== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.2rem;
+}
+
+.dashboard-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  transition: all 0.25s ease;
+}
+
+.dashboard-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+}
+
+.card-icon {
+  font-size: 2rem;
+  margin-bottom: 0.8rem;
+}
+
+.dashboard-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dashboard-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .dashboard-header {
+    padding: 1rem 1.2rem;
+  }
+
+  .dashboard-main {
+    padding: 1.5rem 1.2rem;
+  }
+
+  .dashboard-welcome h2 {
+    font-size: 1.4rem;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
