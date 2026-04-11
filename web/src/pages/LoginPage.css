@@ -369,6 +369,22 @@
   animation: alertShake 0.35s ease-out;
 }
 
+.alert-success {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(64, 192, 96, 0.08);
+  border: 1px solid rgba(64, 192, 96, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.9rem;
+  font-size: 0.82rem;
+  color: #7ed99a;
+}
+
+.alert-success .alert-icon {
+  color: #5acf7a;
+}
+
 .alert-icon {
   width: 18px;
   height: 18px;

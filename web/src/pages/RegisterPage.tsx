@@ -1,17 +1,22 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './LoginPage.css';
 
-function LoginPage() {
-  const location = useLocation();
-  const justRegistered = (location.state as { registered?: boolean } | null)?.registered === true;
+function RegisterPage() {
+  const navigate = useNavigate();
+  const [ime, setIme] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const validateForm = (): boolean => {
+    if (!ime.trim()) {
+      setError('Ime je obavezno.');
+      return false;
+    }
     if (!email.trim()) {
       setError('Email adresa je obavezna.');
       return false;
@@ -29,6 +34,14 @@ function LoginPage() {
       setError('Lozinka mora imati najmanje 8 znakova.');
       return false;
     }
+    if (!passwordConfirm) {
+      setError('Potvrda lozinke je obavezna.');
+      return false;
+    }
+    if (password !== passwordConfirm) {
+      setError('Lozinke se ne poklapaju.');
+      return false;
+    }
     return true;
   };
 
@@ -39,18 +52,17 @@ function LoginPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch('http://localhost:3001/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ ime, email, password }),
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.message || 'Pogrešan email ili lozinka.');
+        setError(data.message || 'Greška pri stvaranju računa.');
         return;
       }
-      localStorage.setItem('token', data.token);
-      window.location.href = '/dashboard';
+      navigate('/login', { state: { registered: true } });
     } catch {
       setError('Greška pri povezivanju sa serverom.');
     } finally {
@@ -108,23 +120,15 @@ function LoginPage() {
           <p className="brand-copy">&copy; 2026 Pandora Security</p>
         </div>
 
-        {/* Right login form panel */}
+        {/* Right register form panel */}
         <div className="form-panel">
           <div className="form-card">
             <div className="form-header">
-              <h2>Dobrodošli natrag</h2>
-              <p>Prijavite se u svoj račun</p>
+              <h2>Stvori račun</h2>
+              <p>Pridružite se Pandora sustavu</p>
             </div>
 
             <form onSubmit={handleSubmit} className="login-form" noValidate>
-              {justRegistered && !error && (
-                <div className="alert alert-success">
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="alert-icon">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                  </svg>
-                  <span>Račun uspješno stvoren. Možete se prijaviti.</span>
-                </div>
-              )}
               {error && (
                 <div className="alert alert-error">
                   <svg viewBox="0 0 20 20" fill="currentColor" className="alert-icon">
@@ -133,6 +137,24 @@ function LoginPage() {
                   <span>{error}</span>
                 </div>
               )}
+
+              <div className="field">
+                <label htmlFor="ime">Ime</label>
+                <div className="input-box">
+                  <input
+                    id="ime"
+                    type="text"
+                    placeholder="Vaše ime"
+                    value={ime}
+                    onChange={(e) => { setIme(e.target.value); setError(''); }}
+                    autoComplete="name"
+                    autoFocus
+                  />
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="field-icon">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
+                  </svg>
+                </div>
+              </div>
 
               <div className="field">
                 <label htmlFor="email">Email adresa</label>
@@ -144,7 +166,6 @@ function LoginPage() {
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setError(''); }}
                     autoComplete="email"
-                    autoFocus
                   />
                   <svg viewBox="0 0 20 20" fill="currentColor" className="field-icon">
                     <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z"/>
@@ -159,10 +180,10 @@ function LoginPage() {
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Unesite lozinku"
+                    placeholder="Najmanje 8 znakova"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -186,12 +207,29 @@ function LoginPage() {
                 </div>
               </div>
 
+              <div className="field">
+                <label htmlFor="passwordConfirm">Potvrda lozinke</label>
+                <div className="input-box">
+                  <input
+                    id="passwordConfirm"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Ponovite lozinku"
+                    value={passwordConfirm}
+                    onChange={(e) => { setPasswordConfirm(e.target.value); setError(''); }}
+                    autoComplete="new-password"
+                  />
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="field-icon">
+                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd"/>
+                  </svg>
+                </div>
+              </div>
+
               <button type="submit" className="btn-submit" disabled={isLoading}>
                 {isLoading ? (
                   <span className="btn-loader"></span>
                 ) : (
                   <>
-                    <span>Prijavi se</span>
+                    <span>Registriraj se</span>
                     <svg viewBox="0 0 20 20" fill="currentColor" className="btn-arrow">
                       <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd"/>
                     </svg>
@@ -202,7 +240,7 @@ function LoginPage() {
 
             <div className="form-footer">
               <div className="footer-line"></div>
-              <p>Nemate račun? <Link to="/register" className="link-register">Registrirajte se</Link></p>
+              <p>Već imate račun? <Link to="/login" className="link-register">Prijavite se</Link></p>
             </div>
           </div>
         </div>
@@ -211,4 +249,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default RegisterPage;
