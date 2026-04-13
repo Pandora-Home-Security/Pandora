@@ -48,13 +48,13 @@ function LoginPage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.message || 'Pogresan email ili lozinka.');
+        setError(data.message || 'Pogrešan email ili lozinka.');
         return;
       }
       setAuthToken(data.token);
       navigate('/dashboard', { replace: true });
     } catch {
-      setError('Greska pri povezivanju sa serverom.');
+      setError('Greška pri povezivanju sa serverom.');
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +88,7 @@ function LoginPage() {
             </div>
             <h1 className="brand-name">Pandora</h1>
             <div className="brand-divider"></div>
-            <p className="brand-tagline">Sustav kuÄ‡ne sigurnosti</p>
+            <p className="brand-tagline">Sustav kućne sigurnosti</p>
             <div className="brand-features">
               <div className="feature-item">
                 <span className="feature-dot"></span>
@@ -110,8 +110,8 @@ function LoginPage() {
         <div className="form-panel">
           <div className="form-card">
             <div className="form-header">
-              <h2>DobrodoĹˇli natrag</h2>
-              <p>Prijavite se u svoj raÄŤun</p>
+              <h2>Dobrodošli natrag</h2>
+              <p>Prijavite se u svoj račun</p>
             </div>
 
             <form onSubmit={handleSubmit} className="login-form" noValidate>
@@ -120,7 +120,7 @@ function LoginPage() {
                   <svg viewBox="0 0 20 20" fill="currentColor" className="alert-icon">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                   </svg>
-                  <span>RaÄŤun uspjeĹˇno stvoren. MoĹľete se prijaviti.</span>
+                  <span>Račun uspješno stvoren. Možete se prijaviti.</span>
                 </div>
               )}
               {error && (
@@ -167,7 +167,7 @@ function LoginPage() {
                     className="toggle-pw"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
-                    aria-label={showPassword ? 'Sakrij lozinku' : 'PrikaĹľi lozinku'}
+                    aria-label={showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'}
                   >
                     {showPassword ? (
                       <svg viewBox="0 0 20 20" fill="currentColor">
@@ -200,7 +200,7 @@ function LoginPage() {
 
             <div className="form-footer">
               <div className="footer-line"></div>
-              <p>Nemate raÄŤun? <Link to="/register" className="link-register">Registrirajte se</Link></p>
+              <p>Nemate račun? <Link to="/register" className="link-register">Registrirajte se</Link></p>
             </div>
           </div>
         </div>

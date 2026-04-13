@@ -35,13 +35,13 @@ function DashboardPage() {
         }
 
         if (!response.ok) {
-          setError(data.message || 'Neuspjesno dohvacanje kamera.');
+          setError(data.message || 'Neuspješno dohvaćanje kamera.');
           return;
         }
 
         setCameras(data.cameras ?? []);
       } catch {
-        setError('Greska pri dohvacanju zasticenih podataka.');
+        setError('Greška pri dohvaćanju zaštićenih podataka.');
       } finally {
         setIsLoading(false);
       }
@@ -80,16 +80,16 @@ function DashboardPage() {
 
       <main className="dashboard-main">
         <div className="dashboard-welcome">
-          <h2>DobrodoĹˇli u Pandora kontrolnu ploÄŤu</h2>
-          <p>Prijava sada koristi backend autentikaciju, a kamera podaci se dohvaÄ‡aju preko zaĹˇtiÄ‡ene API rute s Bearer tokenom.</p>
+          <h2>Dobrodošli u Pandora kontrolnu ploču</h2>
+          <p>Prijava sada koristi backend autentikaciju, a kamera podaci se dohvaćaju preko zaštićene API rute s Bearer tokenom.</p>
         </div>
 
         <div className="dashboard-status">
-          {isLoading && <p>UÄŤitavanje kamera...</p>}
+          {isLoading && <p>Učitavanje kamera...</p>}
           {!isLoading && error && <p className="dashboard-status-error">{error}</p>}
           {!isLoading && !error && (
             <p className="dashboard-status-success">
-              UspjeĹˇno povezano sa zaĹˇtiÄ‡enom rutom. DohvaÄ‡eno kamera: <strong>{cameras.length}</strong>
+              Uspješno povezano sa zaštićenom rutom. Dohvaćeno kamera: <strong>{cameras.length}</strong>
             </p>
           )}
         </div>
@@ -111,7 +111,7 @@ function DashboardPage() {
           <div className="dashboard-card">
             <div className="card-icon">ALR</div>
             <h3>Notifikacije</h3>
-            <p>Detektirani dogaÄ‘aji i alarmi.</p>
+            <p>Detektirani događaji i alarmi.</p>
           </div>
           <div className="dashboard-card">
             <div className="card-icon">ANA</div>

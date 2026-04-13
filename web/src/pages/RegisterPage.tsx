@@ -59,12 +59,12 @@ function RegisterPage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.message || 'GreĹˇka pri stvaranju raÄŤuna.');
+        setError(data.message || 'Greška pri stvaranju računa.');
         return;
       }
       navigate('/login', { state: { registered: true } });
     } catch {
-      setError('GreĹˇka pri povezivanju sa serverom.');
+      setError('Greška pri povezivanju sa serverom.');
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +98,7 @@ function RegisterPage() {
             </div>
             <h1 className="brand-name">Pandora</h1>
             <div className="brand-divider"></div>
-            <p className="brand-tagline">Sustav kuÄ‡ne sigurnosti</p>
+            <p className="brand-tagline">Sustav kućne sigurnosti</p>
             <div className="brand-features">
               <div className="feature-item">
                 <span className="feature-dot"></span>
@@ -120,8 +120,8 @@ function RegisterPage() {
         <div className="form-panel">
           <div className="form-card">
             <div className="form-header">
-              <h2>Stvori raÄŤun</h2>
-              <p>PridruĹľite se Pandora sustavu</p>
+              <h2>Stvori račun</h2>
+              <p>Pridružite se Pandora sustavu</p>
             </div>
 
             <form onSubmit={handleSubmit} className="login-form" noValidate>
@@ -140,7 +140,7 @@ function RegisterPage() {
                   <input
                     id="ime"
                     type="text"
-                    placeholder="VaĹˇe ime"
+                    placeholder="Vaše ime"
                     value={ime}
                     onChange={(e) => { setIme(e.target.value); setError(''); }}
                     autoComplete="name"
@@ -186,7 +186,7 @@ function RegisterPage() {
                     className="toggle-pw"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
-                    aria-label={showPassword ? 'Sakrij lozinku' : 'PrikaĹľi lozinku'}
+                    aria-label={showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'}
                   >
                     {showPassword ? (
                       <svg viewBox="0 0 20 20" fill="currentColor">
@@ -236,7 +236,7 @@ function RegisterPage() {
 
             <div className="form-footer">
               <div className="footer-line"></div>
-              <p>VeÄ‡ imate raÄŤun? <Link to="/login" className="link-register">Prijavite se</Link></p>
+              <p>Već imate račun? <Link to="/login" className="link-register">Prijavite se</Link></p>
             </div>
           </div>
         </div>
