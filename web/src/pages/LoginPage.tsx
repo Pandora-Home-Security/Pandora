@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './LoginPage.css';
+import { apiFetch } from '../lib/api';
+import { setAuthToken } from '../lib/auth';
 
 function LoginPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const justRegistered = (location.state as { registered?: boolean } | null)?.registered === true;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,20 +42,19 @@ function LoginPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await apiFetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.message || 'Pogrešan email ili lozinka.');
+        setError(data.message || 'Pogresan email ili lozinka.');
         return;
       }
-      localStorage.setItem('token', data.token);
-      window.location.href = '/dashboard';
+      setAuthToken(data.token);
+      navigate('/dashboard', { replace: true });
     } catch {
-      setError('Greška pri povezivanju sa serverom.');
+      setError('Greska pri povezivanju sa serverom.');
     } finally {
       setIsLoading(false);
     }
@@ -60,13 +62,11 @@ function LoginPage() {
 
   return (
     <div className="login-page">
-      {/* Animated background grid */}
       <div className="grid-bg" aria-hidden="true">
         <div className="grid-lines"></div>
         <div className="grid-glow"></div>
       </div>
 
-      {/* Floating particles */}
       <div className="particles" aria-hidden="true">
         {[...Array(6)].map((_, i) => (
           <div key={i} className={`particle particle-${i + 1}`}></div>
@@ -74,7 +74,6 @@ function LoginPage() {
       </div>
 
       <div className="login-scene">
-        {/* Left branding panel */}
         <div className="brand-panel">
           <div className="brand-content">
             <div className="brand-badge">
@@ -89,7 +88,7 @@ function LoginPage() {
             </div>
             <h1 className="brand-name">Pandora</h1>
             <div className="brand-divider"></div>
-            <p className="brand-tagline">Sustav kućne sigurnosti</p>
+            <p className="brand-tagline">Sustav kuÄ‡ne sigurnosti</p>
             <div className="brand-features">
               <div className="feature-item">
                 <span className="feature-dot"></span>
@@ -108,12 +107,11 @@ function LoginPage() {
           <p className="brand-copy">&copy; 2026 Pandora Security</p>
         </div>
 
-        {/* Right login form panel */}
         <div className="form-panel">
           <div className="form-card">
             <div className="form-header">
-              <h2>Dobrodošli natrag</h2>
-              <p>Prijavite se u svoj račun</p>
+              <h2>DobrodoĹˇli natrag</h2>
+              <p>Prijavite se u svoj raÄŤun</p>
             </div>
 
             <form onSubmit={handleSubmit} className="login-form" noValidate>
@@ -122,7 +120,7 @@ function LoginPage() {
                   <svg viewBox="0 0 20 20" fill="currentColor" className="alert-icon">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                   </svg>
-                  <span>Račun uspješno stvoren. Možete se prijaviti.</span>
+                  <span>RaÄŤun uspjeĹˇno stvoren. MoĹľete se prijaviti.</span>
                 </div>
               )}
               {error && (
@@ -169,7 +167,7 @@ function LoginPage() {
                     className="toggle-pw"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
-                    aria-label={showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'}
+                    aria-label={showPassword ? 'Sakrij lozinku' : 'PrikaĹľi lozinku'}
                   >
                     {showPassword ? (
                       <svg viewBox="0 0 20 20" fill="currentColor">
@@ -202,7 +200,7 @@ function LoginPage() {
 
             <div className="form-footer">
               <div className="footer-line"></div>
-              <p>Nemate račun? <Link to="/register" className="link-register">Registrirajte se</Link></p>
+              <p>Nemate raÄŤun? <Link to="/register" className="link-register">Registrirajte se</Link></p>
             </div>
           </div>
         </div>
