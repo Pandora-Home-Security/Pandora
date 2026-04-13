@@ -1,11 +1,12 @@
 import { Navigate, Outlet } from 'react-router-dom';
+import { getAuthToken } from '../lib/auth';
 
 /**
- * Zaštićena ruta: dopušta pristup samo prijavljenim korisnicima.
+ * Zasticena ruta: dopusta pristup samo prijavljenim korisnicima.
  * Ako token ne postoji u localStorage, preusmjerava na /login.
  */
 function ProtectedRoute() {
-  const isAuthenticated = localStorage.getItem('token') !== null;
+  const isAuthenticated = getAuthToken() !== null;
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 }
 

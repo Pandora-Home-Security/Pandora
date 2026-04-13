@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './LoginPage.css';
+import { apiFetch } from '../lib/api';
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -52,19 +53,18 @@ function RegisterPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/auth/register', {
+      const response = await apiFetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ime, email, password }),
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.message || 'Greška pri stvaranju računa.');
+        setError(data.message || 'GreĹˇka pri stvaranju raÄŤuna.');
         return;
       }
       navigate('/login', { state: { registered: true } });
     } catch {
-      setError('Greška pri povezivanju sa serverom.');
+      setError('GreĹˇka pri povezivanju sa serverom.');
     } finally {
       setIsLoading(false);
     }
@@ -72,13 +72,11 @@ function RegisterPage() {
 
   return (
     <div className="login-page">
-      {/* Animated background grid */}
       <div className="grid-bg" aria-hidden="true">
         <div className="grid-lines"></div>
         <div className="grid-glow"></div>
       </div>
 
-      {/* Floating particles */}
       <div className="particles" aria-hidden="true">
         {[...Array(6)].map((_, i) => (
           <div key={i} className={`particle particle-${i + 1}`}></div>
@@ -86,7 +84,6 @@ function RegisterPage() {
       </div>
 
       <div className="login-scene">
-        {/* Left branding panel */}
         <div className="brand-panel">
           <div className="brand-content">
             <div className="brand-badge">
@@ -101,7 +98,7 @@ function RegisterPage() {
             </div>
             <h1 className="brand-name">Pandora</h1>
             <div className="brand-divider"></div>
-            <p className="brand-tagline">Sustav kućne sigurnosti</p>
+            <p className="brand-tagline">Sustav kuÄ‡ne sigurnosti</p>
             <div className="brand-features">
               <div className="feature-item">
                 <span className="feature-dot"></span>
@@ -120,12 +117,11 @@ function RegisterPage() {
           <p className="brand-copy">&copy; 2026 Pandora Security</p>
         </div>
 
-        {/* Right register form panel */}
         <div className="form-panel">
           <div className="form-card">
             <div className="form-header">
-              <h2>Stvori račun</h2>
-              <p>Pridružite se Pandora sustavu</p>
+              <h2>Stvori raÄŤun</h2>
+              <p>PridruĹľite se Pandora sustavu</p>
             </div>
 
             <form onSubmit={handleSubmit} className="login-form" noValidate>
@@ -144,7 +140,7 @@ function RegisterPage() {
                   <input
                     id="ime"
                     type="text"
-                    placeholder="Vaše ime"
+                    placeholder="VaĹˇe ime"
                     value={ime}
                     onChange={(e) => { setIme(e.target.value); setError(''); }}
                     autoComplete="name"
@@ -190,7 +186,7 @@ function RegisterPage() {
                     className="toggle-pw"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
-                    aria-label={showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'}
+                    aria-label={showPassword ? 'Sakrij lozinku' : 'PrikaĹľi lozinku'}
                   >
                     {showPassword ? (
                       <svg viewBox="0 0 20 20" fill="currentColor">
@@ -240,7 +236,7 @@ function RegisterPage() {
 
             <div className="form-footer">
               <div className="footer-line"></div>
-              <p>Već imate račun? <Link to="/login" className="link-register">Prijavite se</Link></p>
+              <p>VeÄ‡ imate raÄŤun? <Link to="/login" className="link-register">Prijavite se</Link></p>
             </div>
           </div>
         </div>
