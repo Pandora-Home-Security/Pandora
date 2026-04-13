@@ -1,11 +1,57 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './DashboardPage.css';
+import { apiFetch } from '../lib/api';
+import { clearAuthToken } from '../lib/auth';
+
+type Camera = {
+  id: string;
+  name: string;
+  location: string;
+  isOnline: boolean;
+};
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const [cameras, setCameras] = useState<Camera[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const loadCameras = async () => {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const response = await apiFetch('/api/cameras', {
+          includeAuth: true,
+        });
+        const data = await response.json();
+
+        if (response.status === 401) {
+          clearAuthToken();
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        if (!response.ok) {
+          setError(data.message || 'Neuspjesno dohvacanje kamera.');
+          return;
+        }
+
+        setCameras(data.cameras ?? []);
+      } catch {
+        setError('Greska pri dohvacanju zasticenih podataka.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadCameras();
+  }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    clearAuthToken();
     navigate('/login', { replace: true });
   };
 
@@ -34,28 +80,41 @@ function DashboardPage() {
 
       <main className="dashboard-main">
         <div className="dashboard-welcome">
-          <h2>Dobrodošli u Pandora kontrolnu ploču</h2>
-          <p>Stvarni dashboard sadržaj (kamere, senzori, notifikacije, analitika) dolazi u sljedećem milestone-u <strong>M2 — Layout i navigacija</strong>.</p>
+          <h2>DobrodoĹˇli u Pandora kontrolnu ploÄŤu</h2>
+          <p>Prijava sada koristi backend autentikaciju, a kamera podaci se dohvaÄ‡aju preko zaĹˇtiÄ‡ene API rute s Bearer tokenom.</p>
+        </div>
+
+        <div className="dashboard-status">
+          {isLoading && <p>UÄŤitavanje kamera...</p>}
+          {!isLoading && error && <p className="dashboard-status-error">{error}</p>}
+          {!isLoading && !error && (
+            <p className="dashboard-status-success">
+              UspjeĹˇno povezano sa zaĹˇtiÄ‡enom rutom. DohvaÄ‡eno kamera: <strong>{cameras.length}</strong>
+            </p>
+          )}
         </div>
 
         <div className="dashboard-grid">
+          {cameras.map((camera) => (
+            <div className="dashboard-card" key={camera.id}>
+              <div className="card-icon">{camera.isOnline ? 'CAM' : 'OFF'}</div>
+              <h3>{camera.name}</h3>
+              <p>Lokacija: {camera.location}</p>
+              <p>Status: {camera.isOnline ? 'Online' : 'Offline'}</p>
+            </div>
+          ))}
           <div className="dashboard-card">
-            <div className="card-icon">📹</div>
-            <h3>Kamere</h3>
-            <p>Pregled i upravljanje kamerama u realnom vremenu.</p>
-          </div>
-          <div className="dashboard-card">
-            <div className="card-icon">📡</div>
+            <div className="card-icon">IOT</div>
             <h3>IoT senzori</h3>
             <p>Popis i statusi povezanih senzora.</p>
           </div>
           <div className="dashboard-card">
-            <div className="card-icon">🚨</div>
+            <div className="card-icon">ALR</div>
             <h3>Notifikacije</h3>
-            <p>Detektirani događaji i alarmi.</p>
+            <p>Detektirani dogaÄ‘aji i alarmi.</p>
           </div>
           <div className="dashboard-card">
-            <div className="card-icon">📊</div>
+            <div className="card-icon">ANA</div>
             <h3>Analitika</h3>
             <p>Statistika aktivnosti i grafovi.</p>
           </div>
