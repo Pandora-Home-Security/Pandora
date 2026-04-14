@@ -1,0 +1,287 @@
+/*
+ * AppLayout — zajednički layout za sve zaštićene stranice.
+ * Sidebar (desktop) + hamburger (mobile) + header + content area.
+ * Koristi CSS varijable iz LoginPage.css (:root).
+ */
+
+/* ===== Root layout ===== */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-deep);
+  font-family: 'Outfit', sans-serif;
+  color: var(--text-primary);
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  transition: transform 0.25s ease;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1.4rem 1.3rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--accent);
+}
+
+.sidebar-shield {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.sidebar-brand span {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+}
+
+/* ===== Sidebar navigation ===== */
+.sidebar-nav {
+  flex: 1;
+  padding: 0.8rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  overflow-y: auto;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.nav-link-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.nav-link-active:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.nav-link-active .nav-icon {
+  color: var(--accent);
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* ===== Sidebar footer ===== */
+.sidebar-footer {
+  padding: 1rem 1.3rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sidebar-footer p {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* ===== App content ===== */
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin-left: 250px;
+}
+
+/* ===== Header ===== */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.8rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.header-spacer {
+  flex: 1;
+}
+
+.header-greeting {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.header-greeting strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Hamburger — skriveno na desktopu */
+.hamburger-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  padding: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hamburger-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hamburger-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Logout (reuse istog stila iz DashboardPage) */
+.app-header .logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--border-hover);
+  color: var(--text-secondary);
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.app-header .logout-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.app-header .logout-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ===== Main content area ===== */
+.app-main {
+  flex: 1;
+  padding: 2rem 1.8rem;
+}
+
+/* ===== Backdrop (mobilni) ===== */
+.sidebar-backdrop {
+  display: none;
+}
+
+/* ===== Responsive: tablet i mobilni ===== */
+@media (max-width: 768px) {
+  /* Sidebar skriveno po defaultu */
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  /* Sidebar vidljivo kad je otvoreno */
+  .sidebar-open {
+    transform: translateX(0);
+  }
+
+  /* Sadržaj zauzima punu širinu */
+  .app-content {
+    margin-left: 0;
+  }
+
+  /* Hamburger vidljiv */
+  .hamburger-btn {
+    display: flex;
+  }
+
+  /* Backdrop vidljiv kad je sidebar otvoren */
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+  }
+
+  /* Header padding manji */
+  .app-header {
+    padding: 0.8rem 1.2rem;
+  }
+
+  /* Main padding manji */
+  .app-main {
+    padding: 1.5rem 1.2rem;
+  }
+
+  /* Sakrij greeting tekst na mobilnom da bude uredniji */
+  .header-greeting {
+    display: none;
+  }
+}
+
+/* ===== Placeholder stranice ===== */
+.placeholder-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.placeholder-page h2 {
+  margin: 0 0 0.6rem 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.placeholder-page p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
