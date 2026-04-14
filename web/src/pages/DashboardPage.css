@@ -1,83 +1,7 @@
 /*
- * DashboardPage — početna stranica s pregledom stanja sustava.
- * Stat kartice, zadnjih 5 alarma, status senzora, grid kamera.
+ * DashboardPage stilovi — samo sadržaj stranice.
+ * Layout (sidebar, header, logout) su sad u AppLayout.css.
  */
-
-.dashboard-page {
-  min-height: 100vh;
-  background: var(--bg-deep);
-  color: var(--text-primary);
-  font-family: 'Outfit', sans-serif;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ===== Header ===== */
-.dashboard-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.2rem 2rem;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.dashboard-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  color: var(--accent);
-}
-
-.dashboard-shield {
-  width: 32px;
-  height: 32px;
-}
-
-.dashboard-brand h1 {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--text-primary);
-}
-
-.logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  border: 1px solid var(--border-hover);
-  color: var(--text-secondary);
-  padding: 0.55rem 1rem;
-  border-radius: var(--radius-sm);
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.logout-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.logout-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* ===== Main ===== */
-.dashboard-main {
-  flex: 1;
-  padding: 2rem 2rem;
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
 
 /* ===== Stat kartice ===== */
 .stat-cards {
@@ -422,14 +346,6 @@
 }
 
 @media (max-width: 640px) {
-  .dashboard-header {
-    padding: 1rem 1.2rem;
-  }
-
-  .dashboard-main {
-    padding: 1.2rem;
-  }
-
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
