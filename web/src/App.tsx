@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import CamerasPage from './pages/CamerasPage';
+import CameraDetailPage from './pages/CameraDetailPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
@@ -20,7 +22,8 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/kamere" element={<PlaceholderPage title="Kamere" icon="📹" />} />
+          <Route path="/kamere" element={<CamerasPage />} />
+          <Route path="/kamere/:id" element={<CameraDetailPage />} />
           <Route path="/senzori" element={<PlaceholderPage title="IoT senzori" icon="📡" />} />
           <Route path="/alarmi" element={<PlaceholderPage title="Alarmi i notifikacije" icon="🚨" />} />
           <Route path="/analitika" element={<PlaceholderPage title="Analitika" icon="📊" />} />

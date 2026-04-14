@@ -176,17 +176,39 @@ app.post('/api/auth/login', async (req, res) => {
   });
 });
 
-app.get('/api/cameras', authenticateRequest, (req: AuthenticatedRequest, res) => {
-  const mockCameras = [
-    { id: '1', name: 'Ulazna vrata', location: 'Ulaz', isOnline: true },
-    { id: '2', name: 'Dnevni boravak', location: 'Prizemlje', isOnline: true },
-    { id: '3', name: 'Garaza', location: 'Garaza', isOnline: false },
-  ];
+/* ===== Mock kamere ===== */
+type MockCamera = {
+  id: string;
+  name: string;
+  location: string;
+  isOnline: boolean;
+  resolution: string;
+  lastSeen: string;
+  ip: string;
+};
 
+const mockCameras: MockCamera[] = [
+  { id: '1', name: 'Ulazna vrata', location: 'Ulaz', isOnline: true, resolution: '1920x1080', lastSeen: '2026-04-14T10:30:00Z', ip: '192.168.1.101' },
+  { id: '2', name: 'Dnevni boravak', location: 'Prizemlje', isOnline: true, resolution: '1920x1080', lastSeen: '2026-04-14T10:30:00Z', ip: '192.168.1.102' },
+  { id: '3', name: 'Garaza', location: 'Garaza', isOnline: false, resolution: '1280x720', lastSeen: '2026-04-13T18:45:00Z', ip: '192.168.1.103' },
+  { id: '4', name: 'Straznje dvoriste', location: 'Dvoriste', isOnline: true, resolution: '1920x1080', lastSeen: '2026-04-14T10:30:00Z', ip: '192.168.1.104' },
+  { id: '5', name: 'Spremiste', location: 'Prizemlje', isOnline: false, resolution: '1280x720', lastSeen: '2026-04-12T09:15:00Z', ip: '192.168.1.105' },
+  { id: '6', name: 'Hodnik - 1. kat', location: '1. kat', isOnline: true, resolution: '1920x1080', lastSeen: '2026-04-14T10:30:00Z', ip: '192.168.1.106' },
+];
+
+app.get('/api/cameras', authenticateRequest, (req: AuthenticatedRequest, res) => {
   res.json({
     user: req.user,
     cameras: mockCameras,
   });
+});
+
+app.get('/api/cameras/:id', authenticateRequest, (req: AuthenticatedRequest, res) => {
+  const camera = mockCameras.find((c) => c.id === req.params.id);
+  if (!camera) {
+    return res.status(404).json({ message: 'Kamera nije pronadena.' });
+  }
+  res.json({ camera });
 });
 
 app.listen(PORT, () => {
