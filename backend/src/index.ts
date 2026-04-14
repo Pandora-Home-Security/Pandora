@@ -1,13 +1,22 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { Pool } from 'pg';
 import type { NextFunction, Request, Response } from 'express';
 
 const app = express();
-const PORT = 3001;
+const PORT = Number(process.env.PORT ?? 3001);
 const JWT_SECRET = process.env.JWT_SECRET ?? 'pandora-dev-secret';
 const TOKEN_TTL_SECONDS = 60 * 60 * 8;
+
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL nije postavljen. Kopiraj backend/.env.example u backend/.env.');
+  process.exit(1);
+}
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 app.use(cors());
 app.use(express.json());
@@ -16,7 +25,7 @@ type StoredUser = {
   id: string;
   ime: string;
   email: string;
-  passwordHash: string;
+  password_hash: string;
 };
 
 type AuthTokenPayload = {
@@ -29,8 +38,6 @@ type AuthTokenPayload = {
 type AuthenticatedRequest = Request & {
   user?: AuthTokenPayload;
 };
-
-const users = new Map<string, StoredUser>();
 
 const base64UrlEncode = (value: string) => Buffer.from(value).toString('base64url');
 
@@ -90,7 +97,19 @@ const sanitizeUser = (user: StoredUser) => ({
   email: user.email,
 });
 
-const authenticateRequest = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+const findUserByEmail = async (email: string): Promise<StoredUser | null> => {
+  const result = await pool.query<StoredUser>(
+    'SELECT id::text AS id, ime, email, password_hash FROM users WHERE LOWER(email) = LOWER($1)',
+    [email],
+  );
+  return result.rows[0] ?? null;
+};
+
+const authenticateRequest = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Nedostaje Authorization token.' });
@@ -102,7 +121,7 @@ const authenticateRequest = (req: AuthenticatedRequest, res: Response, next: Nex
     return res.status(401).json({ message: 'Nevazeci ili istekli token.' });
   }
 
-  const user = users.get(payload.email.toLowerCase());
+  const user = await findUserByEmail(payload.email);
   if (!user || user.id !== payload.sub) {
     return res.status(401).json({ message: 'Korisnik vise nije prijavljen.' });
   }
@@ -131,18 +150,22 @@ app.post('/api/auth/register', async (req, res) => {
   }
 
   const emailKey = email.toLowerCase();
-  if (users.has(emailKey)) {
+
+  const existing = await findUserByEmail(emailKey);
+  if (existing) {
     return res.status(409).json({ message: 'Korisnik s tim emailom vec postoji.' });
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user: StoredUser = {
-    id: Date.now().toString(),
-    ime: ime.trim(),
-    email: emailKey,
-    passwordHash,
-  };
-  users.set(emailKey, user);
+
+  const result = await pool.query<StoredUser>(
+    `INSERT INTO users (ime, email, password_hash)
+     VALUES ($1, $2, $3)
+     RETURNING id::text AS id, ime, email, password_hash`,
+    [ime.trim(), emailKey, passwordHash],
+  );
+
+  const user = result.rows[0];
 
   return res.status(201).json({
     message: 'Racun uspjesno stvoren.',
@@ -158,13 +181,12 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(400).json({ message: 'Email i lozinka su obavezni.' });
   }
 
-  const emailKey = email.toLowerCase();
-  const user = users.get(emailKey);
+  const user = await findUserByEmail(email);
   if (!user) {
     return res.status(401).json({ message: 'Pogresan email ili lozinka.' });
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+  const isPasswordValid = await bcrypt.compare(password, user.password_hash);
   if (!isPasswordValid) {
     return res.status(401).json({ message: 'Pogresan email ili lozinka.' });
   }
@@ -189,6 +211,11 @@ app.get('/api/cameras', authenticateRequest, (req: AuthenticatedRequest, res) =>
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend pokrenut: http://localhost:${PORT}`);
+app.listen(PORT, async () => {
+  try {
+    await pool.query('SELECT 1');
+    console.log(`Backend pokrenut: http://localhost:${PORT} (DB OK)`);
+  } catch (err) {
+    console.error('Backend pokrenut ali DB konekcija ne radi:', err);
+  }
 });
