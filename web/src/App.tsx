@@ -2,8 +2,12 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import CamerasPage from './pages/CamerasPage';
+import CameraDetailPage from './pages/CameraDetailPage';
+import PlaceholderPage from './pages/PlaceholderPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
+import AppLayout from './components/AppLayout';
 
 function App() {
   return (
@@ -14,9 +18,17 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
-      {/* Zaštićene rute — zahtijevaju prijavu */}
+      {/* Zaštićene rute — zahtijevaju prijavu, koriste zajednički layout */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/kamere" element={<CamerasPage />} />
+          <Route path="/kamere/:id" element={<CameraDetailPage />} />
+          <Route path="/senzori" element={<PlaceholderPage title="IoT senzori" icon="📡" />} />
+          <Route path="/alarmi" element={<PlaceholderPage title="Alarmi i notifikacije" icon="🚨" />} />
+          <Route path="/analitika" element={<PlaceholderPage title="Analitika" icon="📊" />} />
+          <Route path="/korisnici" element={<PlaceholderPage title="Upravljanje korisnicima" icon="👥" />} />
+        </Route>
       </Route>
 
       {/* Fallback — sve nepoznate rute vode na /login */}
