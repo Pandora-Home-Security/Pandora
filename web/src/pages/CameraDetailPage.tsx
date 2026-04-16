@@ -3,6 +3,8 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import './CameraDetailPage.css';
 import { apiFetch } from '../lib/api';
 import { clearAuthToken } from '../lib/auth';
+import CameraFormModal from '../components/CameraFormModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 /* ===== Tipovi ===== */
 type Camera = {
@@ -22,6 +24,10 @@ function CameraDetailPage() {
   const [camera, setCamera] = useState<Camera | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+
+  /* CRUD modali */
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   /* Video kontrole */
   const videoContainerRef = useRef<HTMLDivElement>(null);
@@ -135,23 +141,67 @@ const response = await apiFetch(`/api/cameras/${id}`, {
     }
   };
 
+  /* Spremi uredivanje */
+  const handleEditSubmit = async (data: { name: string; location: string; streamUrl: string }) => {
+    const response = await apiFetch(`/api/cameras/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      includeAuth: true,
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Greska pri azuriranju.');
+    setCamera(result.camera);
+    setIsFormOpen(false);
+  };
+
+  /* Potvrdi brisanje */
+  const handleDeleteConfirm = async () => {
+    const response = await apiFetch(`/api/cameras/${id}`, {
+      method: 'DELETE',
+      includeAuth: true,
+    });
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.message || 'Greska pri brisanju.');
+    }
+    navigate('/kamere', { replace: true });
+  };
+
   return (
     <>
-      {/* Breadcrumb navigacija */}
-      <div className="camera-detail-breadcrumb">
-        <Link to="/kamere" className="breadcrumb-link">
-          <svg viewBox="0 0 20 20" fill="currentColor" className="breadcrumb-icon">
-            <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 011.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
-          </svg>
-          Natrag na kamere
-        </Link>
-        {camera && (
-          <span className="breadcrumb-current">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="breadcrumb-separator">
-              <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+      {/* Breadcrumb + akcije */}
+      <div className="camera-detail-top-bar">
+        <div className="camera-detail-breadcrumb">
+          <Link to="/kamere" className="breadcrumb-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="breadcrumb-icon">
+              <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 011.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
             </svg>
-            {camera.name}
-          </span>
+            Natrag na kamere
+          </Link>
+          {camera && (
+            <span className="breadcrumb-current">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="breadcrumb-separator">
+                <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+              </svg>
+              {camera.name}
+            </span>
+          )}
+        </div>
+        {camera && (
+          <div className="camera-detail-crud-actions">
+            <button type="button" className="crud-btn crud-btn-edit" onClick={() => setIsFormOpen(true)}>
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+              </svg>
+              Uredi
+            </button>
+            <button type="button" className="crud-btn crud-btn-delete" onClick={() => setIsDeleteOpen(true)}>
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
+              </svg>
+              Obrisi
+            </button>
+          </div>
         )}
       </div>
 
@@ -367,6 +417,25 @@ const response = await apiFetch(`/api/cameras/${id}`, {
           </div>
         </div>
       )}
+      {/* Modal za uredivanje */}
+      <CameraFormModal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleEditSubmit}
+        isEdit
+        initialData={camera ? { name: camera.name, location: camera.location, streamUrl: '' } : null}
+      />
+
+      {/* Modal za potvrdu brisanja */}
+      <ConfirmModal
+        isOpen={isDeleteOpen}
+        title="Obrisati kameru?"
+        message={`Jeste li sigurni da zelite obrisati kameru "${camera?.name ?? ''}"? Ova akcija se ne moze ponistiti.`}
+        confirmText="Obrisi"
+        danger
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setIsDeleteOpen(false)}
+      />
     </>
   );
 }
