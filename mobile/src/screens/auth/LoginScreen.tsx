@@ -16,6 +16,8 @@ import { PrimaryButton } from '../../components/PrimaryButton';
 import { Alert } from '../../components/Alert';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
+import { apiFetch } from '../../lib/api';
+import { setAuthSession } from '../../lib/auth';
 import type { AuthStackParamList } from '../../navigation/AuthStack';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
@@ -48,17 +50,28 @@ export function LoginScreen({ navigation, route }: Props) {
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError('');
     if (!validate()) return;
 
     setLoading(true);
-    // TODO: API poziv (apiFetch '/api/auth/login') + spremanje tokena u SecureStore.
-    // Za sada samo simulacija — sljedeci korak ce zamijeniti ovo s pravim auth flow-om.
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const response = await apiFetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.message || 'Pogrešan email ili lozinka.');
+        return;
+      }
+      setAuthSession(data.token, data.user);
       navigation.replace('Home');
-    }, 700);
+    } catch {
+      setError('Greška pri povezivanju sa serverom.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

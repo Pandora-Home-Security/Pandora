@@ -16,6 +16,7 @@ import { PrimaryButton } from '../../components/PrimaryButton';
 import { Alert } from '../../components/Alert';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
+import { apiFetch } from '../../lib/api';
 import type { AuthStackParamList } from '../../navigation/AuthStack';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
@@ -61,16 +62,27 @@ export function RegisterScreen({ navigation }: Props) {
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError('');
     if (!validate()) return;
 
     setLoading(true);
-    // TODO: API poziv (apiFetch '/api/auth/register') — sljedeci korak.
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const response = await apiFetch('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ ime, email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.message || 'Greška pri stvaranju računa.');
+        return;
+      }
       navigation.replace('Login', { justRegistered: true });
-    }, 700);
+    } catch {
+      setError('Greška pri povezivanju sa serverom.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
