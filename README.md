@@ -21,25 +21,6 @@ git clone https://github.com/TVOJ-USERNAME/pandora.git
 
 ### Backend
 
-Prvi setup (jednom):
-
-1. Instaliraj PostgreSQL 18 (EnterpriseDB installer). Servis mora biti pokrenut na portu `5432`.
-2. Kreiraj app usera i bazu — pokreni kao `postgres` superuser (unijet ćeš lozinku koju si zadao tijekom instalacije):
-   ```bash
-   "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -f backend/db/init.sql
-   ```
-   (Ako si instalirao na drugi disk, prilagodi put — npr. `Z:\postgresql\bin\psql.exe`.)
-3. Kreiraj tablice u bazi `pandora`:
-   ```bash
-   "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U pandora_app -d pandora -f backend/db/schema.sql
-   ```
-   Lozinka: `pandora_dev` (dev default iz `init.sql`).
-4. Kopiraj env file:
-   ```bash
-   cd backend
-   cp .env.example .env
-   ```
-
 Pokretanje:
 ```bash
 cd backend
