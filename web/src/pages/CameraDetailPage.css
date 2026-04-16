@@ -3,12 +3,58 @@
  * Video player s kontrolama, podaci o kameri, brze akcije.
  */
 
+/* ===== Top bar (breadcrumb + akcije) ===== */
+.camera-detail-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 /* ===== Breadcrumb ===== */
 .camera-detail-breadcrumb {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  margin-bottom: 1.5rem;
+}
+
+/* ===== CRUD gumbi ===== */
+.camera-detail-crud-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.crud-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.crud-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.crud-btn-edit:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.crud-btn-delete:hover {
+  border-color: #f87171;
+  color: #f87171;
 }
 
 .breadcrumb-link {

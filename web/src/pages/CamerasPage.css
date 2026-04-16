@@ -31,10 +31,45 @@
   color: var(--text-muted);
 }
 
+.cameras-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
 .cameras-stats {
   display: flex;
   gap: 0.75rem;
   flex-shrink: 0;
+}
+
+/* ===== Gumb Dodaj ===== */
+.cameras-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #0a0c10;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cameras-add-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.cameras-add-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .cameras-stat {
@@ -249,6 +284,50 @@
   letter-spacing: 0.08em;
 }
 
+/* ===== Akcije na kartici ===== */
+.camera-card-actions {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: flex;
+  gap: 0.35rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.camera-card:hover .camera-card-actions {
+  opacity: 1;
+}
+
+.camera-card-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  color: #d1d5db;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.camera-card-action-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.camera-card-action-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--accent);
+}
+
+.camera-card-action-delete:hover {
+  color: #f87171;
+}
+
 /* ===== Camera info ===== */
 .camera-info {
   padding: 1rem 1.2rem;
@@ -312,8 +391,18 @@
     flex-direction: column;
   }
 
+  .cameras-header-right {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .cameras-stats {
     flex-wrap: wrap;
+  }
+
+  /* Na touchscreenu akcije uvijek vidljive */
+  .camera-card-actions {
+    opacity: 1;
   }
 }
 
@@ -328,5 +417,10 @@
 
   .cameras-title {
     font-size: 1.3rem;
+  }
+
+  .cameras-add-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
