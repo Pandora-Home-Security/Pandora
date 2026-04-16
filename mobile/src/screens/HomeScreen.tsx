@@ -30,6 +30,9 @@ export function HomeScreen({ navigation }: Props) {
           Placeholder ekran nakon prijave. Dashboard, kamere, alarmi i ostalo dolaze u sljedećim
           milestonovima.
         </Text>
+        <Pressable onPress={() => navigation.navigate('Account')} style={styles.logoutBtn} hitSlop={8}>
+          <Text style={styles.logoutText}>Moj račun</Text>
+        </Pressable>
         <Pressable onPress={handleLogout} style={styles.logoutBtn} hitSlop={8}>
           <Text style={styles.logoutText}>Odjavi se</Text>
         </Pressable>
