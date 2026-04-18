@@ -12,6 +12,50 @@ pandora/
 ├── shared/      → Zajednički tipovi i konstante
 ```
 
+## Preporuceni IoT smjer
+
+Trenutna struktura projekta ima smisla za Pandora setup:
+
+- `backend/` ostaje jedina tocka kroz koju prolaze autentikacija, ingest dogadaja i spremanje podataka
+- `web/` i `mobile/` trebaju citati stanje senzora i alarma iskljucivo preko backenda
+- `shared/` je pravo mjesto za zajednicke tipove poput `Device`, `SensorEvent` i `DeviceHeartbeat`
+
+Najcistiji prvi IoT flow za ovaj projekt je:
+
+`Senzor -> ESP32 -> backend API -> baza -> web/mobile`
+
+Za prvu verziju preporuka je krenuti s event-based modelom:
+
+- barem jedan fizicki senzor spojen na ESP32
+- ESP32 salje `POST` na backend samo kad se stanje promijeni
+- backend sprema dogadaj i iz njega generira alarm ili status za dashboard
+
+Za device autentikaciju nemojte koristiti korisnicki login token. Jednostavnija i dovoljno dobra prva verzija je:
+
+- svaki ESP32 dobije `deviceId`
+- svaki ESP32 dobije svoj `apiKey`
+- zahtjev salje `Authorization: Bearer DEVICE_API_KEY`
+- backend cuva samo hash kljuca, ne plaintext
+
+Minimalni endpointi koje vrijedi planirati:
+
+- `POST /api/device-events`
+- `POST /api/device-heartbeat`
+- `GET /api/devices`
+- `GET /api/events`
+
+Primjer payloada za event:
+
+```json
+{
+  "deviceId": "esp32-front-door-01",
+  "sensorType": "door",
+  "event": "opened",
+  "timestamp": "2026-04-18T18:30:00Z",
+  "battery": 88
+}
+```
+
 ## Brzi start
 
 ### Kloniraj
@@ -110,4 +154,3 @@ Mora ispisati `Backend pokrenut: http://localhost:3001 (DB OK)`.
 - **`psql: command not found`** → koristi se krivi put. Nije potrebno dodavati u PATH, samo puni put do `psql.exe`.
 - **`ECONNREFUSED 127.0.0.1:5432`** → Postgres servis ne vrti. Windows Services → `postgresql-x64-18` → Start.
 - **`DB konekcija ne radi` pri pokretanju backenda** → nema `.env` ili je prazan. `cp .env.example .env`.
-
