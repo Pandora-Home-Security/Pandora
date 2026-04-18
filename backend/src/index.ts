@@ -198,6 +198,52 @@ app.post('/api/auth/login', async (req, res) => {
   });
 });
 
+/* ===== Mock alarmi ===== */
+type AlarmType = 'motion' | 'sound' | 'offline' | 'door' | 'temp';
+
+type MockAlarm = {
+  id: string;
+  type: AlarmType;
+  camera: string;
+  message: string;
+  time: string;
+  isRead: boolean;
+};
+
+const mockAlarms: MockAlarm[] = [
+  { id: '1',  type: 'motion',  camera: 'Ulazna vrata',        message: 'Pokret detektiran',            time: '2026-04-18T10:25:00Z', isRead: false },
+  { id: '2',  type: 'sound',   camera: 'Dnevni boravak',      message: 'Detektiran glasan zvuk',        time: '2026-04-18T09:40:00Z', isRead: false },
+  { id: '3',  type: 'offline', camera: 'Garaža',              message: 'Kamera izgubila vezu',          time: '2026-04-18T08:15:00Z', isRead: false },
+  { id: '4',  type: 'door',    camera: 'Stražnje dvorište',   message: 'Vrata otvorena',                time: '2026-04-17T22:30:00Z', isRead: false },
+  { id: '5',  type: 'temp',    camera: 'Spremište',           message: 'Temperatura previsoka',         time: '2026-04-17T18:05:00Z', isRead: true  },
+  { id: '6',  type: 'motion',  camera: 'Hodnik - 1. kat',    message: 'Pokret detektiran',             time: '2026-04-17T14:20:00Z', isRead: true  },
+  { id: '7',  type: 'offline', camera: 'Spremište',           message: 'Kamera izgubila vezu',          time: '2026-04-17T11:00:00Z', isRead: true  },
+  { id: '8',  type: 'sound',   camera: 'Garaža',              message: 'Detektiran glasan zvuk',        time: '2026-04-16T23:50:00Z', isRead: true  },
+  { id: '9',  type: 'motion',  camera: 'Stražnje dvorište',   message: 'Pokret detektiran',             time: '2026-04-16T19:10:00Z', isRead: true  },
+  { id: '10', type: 'door',    camera: 'Ulazna vrata',        message: 'Vrata otvorena dulje od 5 min', time: '2026-04-16T07:45:00Z', isRead: true  },
+];
+
+app.get('/api/alarms', authenticateRequest, (_req: AuthenticatedRequest, res) => {
+  const sorted = [...mockAlarms].sort(
+    (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
+  );
+  res.json({ alarms: sorted });
+});
+
+app.patch('/api/alarms/read-all', authenticateRequest, (_req: AuthenticatedRequest, res) => {
+  mockAlarms.forEach((a) => { a.isRead = true; });
+  res.json({ message: 'Svi alarmi označeni kao pročitani.' });
+});
+
+app.patch('/api/alarms/:id/read', authenticateRequest, (req: AuthenticatedRequest, res) => {
+  const alarm = mockAlarms.find((a) => a.id === req.params.id);
+  if (!alarm) {
+    return res.status(404).json({ message: 'Alarm nije pronađen.' });
+  }
+  alarm.isRead = true;
+  res.json({ alarm });
+});
+
 /* ===== Mock kamere ===== */
 type MockCamera = {
   id: string;
