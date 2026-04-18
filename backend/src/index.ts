@@ -198,6 +198,72 @@ app.post('/api/auth/login', async (req, res) => {
   });
 });
 
+/* ===== Upravljanje računom ===== */
+
+app.put('/api/auth/profile', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const { ime, email } = req.body ?? {};
+
+  if (!ime || typeof ime !== 'string' || !ime.trim()) {
+    return res.status(400).json({ message: 'Ime je obavezno.' });
+  }
+
+  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: 'Neispravna email adresa.' });
+  }
+
+  const emailKey = email.toLowerCase();
+
+  const existing = await findUserByEmail(emailKey);
+  if (existing && existing.id !== req.user!.sub) {
+    return res.status(409).json({ message: 'Email adresa je već u upotrebi.' });
+  }
+
+  const result = await pool.query<StoredUser>(
+    `UPDATE users SET ime = $1, email = $2 WHERE id = $3
+     RETURNING id::text AS id, ime, email, password_hash`,
+    [ime.trim(), emailKey, req.user!.sub],
+  );
+
+  const user = result.rows[0];
+  return res.json({
+    message: 'Profil uspješno ažuriran.',
+    user: sanitizeUser(user),
+    token: createAuthToken(user),
+  });
+});
+
+app.put('/api/auth/password', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const { staraLozinka, novaLozinka } = req.body ?? {};
+
+  if (!staraLozinka || typeof staraLozinka !== 'string') {
+    return res.status(400).json({ message: 'Stara lozinka je obavezna.' });
+  }
+
+  if (!novaLozinka || typeof novaLozinka !== 'string' || novaLozinka.length < 8) {
+    return res.status(400).json({ message: 'Nova lozinka mora imati najmanje 8 znakova.' });
+  }
+
+  const result = await pool.query<StoredUser>(
+    'SELECT id::text AS id, ime, email, password_hash FROM users WHERE id = $1',
+    [req.user!.sub],
+  );
+
+  const user = result.rows[0];
+  if (!user) {
+    return res.status(404).json({ message: 'Korisnik nije pronađen.' });
+  }
+
+  const isValid = await bcrypt.compare(staraLozinka, user.password_hash);
+  if (!isValid) {
+    return res.status(400).json({ message: 'Stara lozinka nije ispravna.' });
+  }
+
+  const newHash = await bcrypt.hash(novaLozinka, 10);
+  await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user!.sub]);
+
+  return res.json({ message: 'Lozinka uspješno promijenjena.' });
+});
+
 /* ===== Mock alarmi ===== */
 type AlarmType = 'motion' | 'sound' | 'offline' | 'door' | 'temp';
 
@@ -277,6 +343,77 @@ app.get('/api/cameras/:id', authenticateRequest, (req: AuthenticatedRequest, res
     return res.status(404).json({ message: 'Kamera nije pronadena.' });
   }
   res.json({ camera });
+});
+
+/* ===== CRUD kamere ===== */
+
+app.post('/api/cameras', authenticateRequest, (req: AuthenticatedRequest, res) => {
+  const { name, location, streamUrl } = req.body ?? {};
+
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    return res.status(400).json({ message: 'Naziv kamere je obavezan.' });
+  }
+
+  if (!location || typeof location !== 'string' || !location.trim()) {
+    return res.status(400).json({ message: 'Lokacija je obavezna.' });
+  }
+
+  const maxId = mockCameras.reduce((max, c) => Math.max(max, Number(c.id)), 0);
+  const newId = String(maxId + 1);
+
+  const newCamera: MockCamera = {
+    id: newId,
+    name: name.trim(),
+    location: location.trim(),
+    isOnline: false,
+    resolution: '1920x1080',
+    lastSeen: new Date().toISOString(),
+    ip: `192.168.1.${100 + Number(newId)}`,
+    ...(streamUrl && typeof streamUrl === 'string' ? { streamUrl: streamUrl.trim() } : {}),
+  };
+
+  mockCameras.push(newCamera);
+  res.status(201).json({ message: 'Kamera uspjesno dodana.', camera: newCamera });
+});
+
+app.put('/api/cameras/:id', authenticateRequest, (req: AuthenticatedRequest, res) => {
+  const index = mockCameras.findIndex((c) => c.id === req.params.id);
+  if (index === -1) {
+    return res.status(404).json({ message: 'Kamera nije pronadena.' });
+  }
+
+  const { name, location, streamUrl } = req.body ?? {};
+
+  if (name !== undefined) {
+    if (typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ message: 'Naziv kamere ne moze biti prazan.' });
+    }
+    mockCameras[index].name = name.trim();
+  }
+
+  if (location !== undefined) {
+    if (typeof location !== 'string' || !location.trim()) {
+      return res.status(400).json({ message: 'Lokacija ne moze biti prazna.' });
+    }
+    mockCameras[index].location = location.trim();
+  }
+
+  if (streamUrl !== undefined) {
+    (mockCameras[index] as MockCamera & { streamUrl?: string }).streamUrl =
+      typeof streamUrl === 'string' && streamUrl.trim() ? streamUrl.trim() : undefined;
+  }
+
+  res.json({ message: 'Kamera uspjesno azurirana.', camera: mockCameras[index] });
+});
+
+app.delete('/api/cameras/:id', authenticateRequest, (req: AuthenticatedRequest, res) => {
+  const index = mockCameras.findIndex((c) => c.id === req.params.id);
+  if (index === -1) {
+    return res.status(404).json({ message: 'Kamera nije pronadena.' });
+  }
+
+  mockCameras.splice(index, 1);
+  res.json({ message: 'Kamera uspjesno obrisana.' });
 });
 
 app.listen(PORT, async () => {

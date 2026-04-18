@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './CamerasPage.css';
 import { apiFetch } from '../lib/api';
 import { clearAuthToken } from '../lib/auth';
+import CameraFormModal from '../components/CameraFormModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 /* ===== Tipovi ===== */
 type Camera = {
@@ -25,38 +27,44 @@ function CamerasPage() {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<FilterStatus>('all');
 
-  useEffect(() => {
-    const loadCameras = async () => {
-      setIsLoading(true);
-      setError('');
+  /* Modal stanja */
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingCamera, setEditingCamera] = useState<Camera | null>(null);
+  const [deletingCamera, setDeletingCamera] = useState<Camera | null>(null);
 
-      try {
-        const response = await apiFetch('/api/cameras', {
-          includeAuth: true,
-        });
-        const data = await response.json();
+  /* Dohvati kamere */
+  const loadCameras = useCallback(async () => {
+    setIsLoading(true);
+    setError('');
 
-        if (response.status === 401) {
-          clearAuthToken();
-          navigate('/login', { replace: true });
-          return;
-        }
+    try {
+      const response = await apiFetch('/api/cameras', {
+        includeAuth: true,
+      });
+      const data = await response.json();
 
-        if (!response.ok) {
-          setError(data.message || 'Neuspjesno dohvacanje kamera.');
-          return;
-        }
-
-        setCameras(data.cameras ?? []);
-      } catch {
-        setError('Greska pri dohvacanju podataka o kamerama.');
-      } finally {
-        setIsLoading(false);
+      if (response.status === 401) {
+        clearAuthToken();
+        navigate('/login', { replace: true });
+        return;
       }
-    };
 
-    void loadCameras();
+      if (!response.ok) {
+        setError(data.message || 'Neuspjesno dohvacanje kamera.');
+        return;
+      }
+
+      setCameras(data.cameras ?? []);
+    } catch {
+      setError('Greska pri dohvacanju podataka o kamerama.');
+    } finally {
+      setIsLoading(false);
+    }
   }, [navigate]);
+
+  useEffect(() => {
+    void loadCameras();
+  }, [loadCameras]);
 
   /* Filtriranje */
   const filteredCameras = cameras.filter((camera) => {
@@ -84,6 +92,70 @@ function CamerasPage() {
     }
   };
 
+  /* Otvori formu za dodavanje */
+  const handleAdd = () => {
+    setEditingCamera(null);
+    setIsFormOpen(true);
+  };
+
+  /* Otvori formu za uredivanje */
+  const handleEdit = (e: React.MouseEvent, camera: Camera) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingCamera(camera);
+    setIsFormOpen(true);
+  };
+
+  /* Otvori potvrdu za brisanje */
+  const handleDeleteClick = (e: React.MouseEvent, camera: Camera) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeletingCamera(camera);
+  };
+
+  /* Submit forme (dodaj / uredi) */
+  const handleFormSubmit = async (data: { name: string; location: string; streamUrl: string }) => {
+    if (editingCamera) {
+      const response = await apiFetch(`/api/cameras/${editingCamera.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        includeAuth: true,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Greska pri azuriranju.');
+    } else {
+      const response = await apiFetch('/api/cameras', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        includeAuth: true,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Greska pri dodavanju.');
+    }
+
+    setIsFormOpen(false);
+    setEditingCamera(null);
+    await loadCameras();
+  };
+
+  /* Potvrdi brisanje */
+  const handleDeleteConfirm = async () => {
+    if (!deletingCamera) return;
+
+    const response = await apiFetch(`/api/cameras/${deletingCamera.id}`, {
+      method: 'DELETE',
+      includeAuth: true,
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.message || 'Greska pri brisanju.');
+    }
+
+    setDeletingCamera(null);
+    await loadCameras();
+  };
+
   return (
     <>
       {/* Zaglavlje stranice */}
@@ -92,16 +164,24 @@ function CamerasPage() {
           <h2 className="cameras-title">Kamere</h2>
           <p className="cameras-subtitle">Pregled svih kamera u sustavu</p>
         </div>
-        <div className="cameras-stats">
-          <span className="cameras-stat cameras-stat-total">
-            Ukupno: <strong>{cameras.length}</strong>
-          </span>
-          <span className="cameras-stat cameras-stat-online">
-            Online: <strong>{onlineCount}</strong>
-          </span>
-          <span className="cameras-stat cameras-stat-offline">
-            Offline: <strong>{offlineCount}</strong>
-          </span>
+        <div className="cameras-header-right">
+          <div className="cameras-stats">
+            <span className="cameras-stat cameras-stat-total">
+              Ukupno: <strong>{cameras.length}</strong>
+            </span>
+            <span className="cameras-stat cameras-stat-online">
+              Online: <strong>{onlineCount}</strong>
+            </span>
+            <span className="cameras-stat cameras-stat-offline">
+              Offline: <strong>{offlineCount}</strong>
+            </span>
+          </div>
+          <button type="button" className="cameras-add-btn" onClick={handleAdd}>
+            <svg viewBox="0 0 20 20" fill="currentColor" className="cameras-add-icon">
+              <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+            </svg>
+            Dodaj kameru
+          </button>
         </div>
       </div>
 
@@ -172,6 +252,32 @@ function CamerasPage() {
                     </svg>
                     {camera.isOnline && <span className="camera-live-badge">LIVE</span>}
                     {!camera.isOnline && <span className="camera-offline-badge">OFFLINE</span>}
+
+                    {/* Akcije na kartici */}
+                    <div className="camera-card-actions">
+                      <button
+                        type="button"
+                        className="camera-card-action-btn"
+                        onClick={(e) => handleEdit(e, camera)}
+                        aria-label="Uredi kameru"
+                        title="Uredi"
+                      >
+                        <svg viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        className="camera-card-action-btn camera-card-action-delete"
+                        onClick={(e) => handleDeleteClick(e, camera)}
+                        aria-label="Obrisi kameru"
+                        title="Obrisi"
+                      >
+                        <svg viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Info */}
@@ -201,6 +307,26 @@ function CamerasPage() {
           )}
         </>
       )}
+
+      {/* Modal za dodaj/uredi */}
+      <CameraFormModal
+        isOpen={isFormOpen}
+        onClose={() => { setIsFormOpen(false); setEditingCamera(null); }}
+        onSubmit={handleFormSubmit}
+        isEdit={!!editingCamera}
+        initialData={editingCamera ? { name: editingCamera.name, location: editingCamera.location, streamUrl: '' } : null}
+      />
+
+      {/* Modal za potvrdu brisanja */}
+      <ConfirmModal
+        isOpen={!!deletingCamera}
+        title="Obrisati kameru?"
+        message={`Jeste li sigurni da zelite obrisati kameru "${deletingCamera?.name ?? ''}"? Ova akcija se ne moze poništiti.`}
+        confirmText="Obrisi"
+        danger
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeletingCamera(null)}
+      />
     </>
   );
 }
