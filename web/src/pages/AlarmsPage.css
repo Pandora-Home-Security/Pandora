@@ -1,0 +1,337 @@
+/* ===== Zaglavlje ===== */
+.alarms-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.alarms-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.alarms-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.alarms-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.alarms-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.alarms-stat {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.alarms-stat strong {
+  font-weight: 600;
+}
+
+.alarms-stat-unread strong {
+  color: #fb923c;
+}
+
+.alarms-mark-all-btn {
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.alarms-mark-all-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ===== Filteri ===== */
+.alarms-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.alarms-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.alarms-filter-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  min-width: 40px;
+}
+
+.filter-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.filter-btn-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.filter-btn-active:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ===== Error ===== */
+.alarms-error {
+  margin-bottom: 1.5rem;
+}
+
+.alarms-error p {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--error-bg);
+  border: 1px solid rgba(229, 77, 77, 0.15);
+  color: #ff8f8f;
+  font-size: 0.9rem;
+}
+
+/* ===== Loading ===== */
+.alarms-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+}
+
+.alarms-loading p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.alarms-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Empty state ===== */
+.alarms-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 0.75rem;
+  color: var(--text-muted);
+}
+
+.alarms-empty-icon {
+  width: 48px;
+  height: 48px;
+  opacity: 0.3;
+}
+
+.alarms-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* ===== Tablica ===== */
+.alarms-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-subtle);
+}
+
+.alarms-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.alarms-table thead tr {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.alarms-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.alarms-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.alarms-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Nepročitani redak — blago istaknuto pozadinom */
+.alarm-row-unread {
+  background: rgba(251, 146, 60, 0.04);
+}
+
+.alarm-row-unread .alarm-cell-message,
+.alarm-row-unread .alarm-cell-camera {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.alarm-row-read {
+  background: transparent;
+}
+
+.alarm-row-read .alarm-cell-message,
+.alarm-row-read .alarm-cell-camera {
+  color: var(--text-secondary);
+}
+
+.alarm-cell-time {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ===== Tip badge ===== */
+.alarm-type-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.alarm-type-motion  { background: rgba(96,165,250,0.15);  color: #60a5fa; }
+.alarm-type-sound   { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.alarm-type-offline { background: rgba(107,114,128,0.15); color: #9ca3af; }
+.alarm-type-door    { background: rgba(52,211,153,0.15);  color: #34d399; }
+.alarm-type-temp    { background: rgba(251,146,60,0.15);  color: #fb923c; }
+
+/* ===== Status badge ===== */
+.alarm-status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.alarm-status-unread {
+  background: rgba(251,146,60,0.15);
+  color: #fb923c;
+}
+
+.alarm-status-read {
+  background: rgba(107,114,128,0.1);
+  color: var(--text-muted);
+}
+
+/* ===== Akcija gumb ===== */
+.alarm-cell-action {
+  white-space: nowrap;
+}
+
+.alarm-read-btn {
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.alarm-read-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .alarms-header {
+    flex-direction: column;
+  }
+
+  .alarms-header-right {
+    flex-shrink: unset;
+  }
+}
+
+@media (max-width: 640px) {
+  .alarms-title {
+    font-size: 1.3rem;
+  }
+
+  .alarms-table th,
+  .alarms-table td {
+    padding: 0.6rem 0.7rem;
+  }
+}
