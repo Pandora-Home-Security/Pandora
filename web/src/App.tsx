@@ -9,7 +9,7 @@ import PlaceholderPage from './pages/PlaceholderPage';
 import AccountPage from './pages/AccountPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
-import AppLayout from './components/AppLayout';
+import ProtectedShell from './components/ProtectedShell';
 
 function App() {
   return (
@@ -20,9 +20,9 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
-      {/* Zaštićene rute — zahtijevaju prijavu, koriste zajednički layout */}
+      {/* Zaštićene rute — zahtijevaju prijavu, koriste zajednički layout i notifikacije */}
       <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
+        <Route element={<ProtectedShell />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/kamere" element={<CamerasPage />} />
           <Route path="/kamere/:id" element={<CameraDetailPage />} />

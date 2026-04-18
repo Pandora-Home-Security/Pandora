@@ -99,6 +99,37 @@
   flex-shrink: 0;
 }
 
+.nav-label {
+  flex: 1;
+}
+
+/* ===== Badge u sidebaru (broj nepročitanih alarma) ===== */
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  font-family: 'Outfit', sans-serif;
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5); }
+  50%      { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+}
+
+.nav-link-active .nav-badge {
+  background: #dc2626;
+}
+
 /* ===== Sidebar footer ===== */
 .sidebar-footer {
   padding: 1rem 1.3rem;
@@ -140,6 +171,53 @@
 .header-greeting {
   font-size: 0.88rem;
   color: var(--text-secondary);
+}
+
+/* ===== Zvonce u header-u ===== */
+.header-bell-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-bell-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.header-bell-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.header-bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+  font-family: 'Outfit', sans-serif;
+  border: 2px solid var(--bg-surface);
+  animation: badgePulse 2s ease-in-out infinite;
 }
 
 .header-greeting strong {
