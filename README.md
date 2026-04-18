@@ -56,8 +56,6 @@ Primjer payloada za event:
 }
 ```
 
-Detaljniji prijedlog milestoneova i gdje ih dodati nalazi se u [docs/iot_milestone_plan.md](docs/iot_milestone_plan.md).
-
 ## Brzi start
 
 ### Kloniraj
