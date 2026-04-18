@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getAuthToken, clearAuthToken } from '../lib/auth';
+import { useNotifications } from '../contexts/NotificationsContext';
 import './AppLayout.css';
 
 /** Dekodira ime korisnika iz JWT payload-a. */
@@ -29,6 +30,7 @@ function AppLayout() {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const userName = getUserName();
+  const { unreadCount } = useNotifications();
 
   const handleLogout = () => {
     clearAuthToken();
@@ -59,19 +61,27 @@ function AppLayout() {
         </div>
 
         <nav className="sidebar-nav">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
-              onClick={closeSidebar}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="nav-icon">
-                <path d={item.icon} />
-              </svg>
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
+          {navItems.map((item) => {
+            const showBadge = item.to === '/alarmi' && unreadCount > 0;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                onClick={closeSidebar}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="nav-icon">
+                  <path d={item.icon} />
+                </svg>
+                <span className="nav-label">{item.label}</span>
+                {showBadge && (
+                  <span className="nav-badge" aria-label={`${unreadCount} nepročitanih alarma`}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
 
         <div className="sidebar-footer">
@@ -105,6 +115,24 @@ function AppLayout() {
           </button>
 
           <div className="header-spacer" />
+
+          {/* Zvonce s brojem nepročitanih — vidljivo na mobitelu kad je sidebar skriven */}
+          <button
+            type="button"
+            className="header-bell-btn"
+            onClick={() => navigate('/alarmi')}
+            aria-label={unreadCount > 0 ? `${unreadCount} nepročitanih alarma` : 'Otvori alarme'}
+            title="Alarmi"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            {unreadCount > 0 && (
+              <span className="header-bell-badge">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </button>
 
           {userName && (
             <span className="header-greeting">

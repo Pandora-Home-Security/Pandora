@@ -310,6 +310,42 @@ app.patch('/api/alarms/:id/read', authenticateRequest, (req: AuthenticatedReques
   res.json({ alarm });
 });
 
+/* ===== Simulacija novih alarma (za testiranje real-time notifikacija) ===== */
+let nextAlarmId = 11; // prvi novi alarm dobiva id 11 (postojece ih je 10)
+
+const simulationPool: { type: AlarmType; camera: string; message: string }[] = [
+  { type: 'motion',  camera: 'Ulazna vrata',      message: 'Pokret detektiran' },
+  { type: 'sound',   camera: 'Dnevni boravak',    message: 'Detektiran glasan zvuk' },
+  { type: 'offline', camera: 'Garaža',            message: 'Kamera izgubila vezu' },
+  { type: 'door',    camera: 'Stražnje dvorište', message: 'Vrata otvorena' },
+  { type: 'temp',    camera: 'Spremište',         message: 'Temperatura previsoka' },
+  { type: 'motion',  camera: 'Hodnik - 1. kat',   message: 'Pokret detektiran' },
+];
+
+app.post('/api/alarms/simulate', authenticateRequest, (req: AuthenticatedRequest, res) => {
+  const body = req.body ?? {};
+  const pick = simulationPool[Math.floor(Math.random() * simulationPool.length)];
+
+  const type: AlarmType = body.type && ['motion', 'sound', 'offline', 'door', 'temp'].includes(body.type)
+    ? body.type
+    : pick.type;
+
+  const camera = typeof body.camera === 'string' && body.camera.trim() ? body.camera.trim() : pick.camera;
+  const message = typeof body.message === 'string' && body.message.trim() ? body.message.trim() : pick.message;
+
+  const alarm: MockAlarm = {
+    id: String(nextAlarmId++),
+    type,
+    camera,
+    message,
+    time: new Date().toISOString(),
+    isRead: false,
+  };
+
+  mockAlarms.push(alarm);
+  res.status(201).json({ alarm });
+});
+
 /* ===== Mock kamere ===== */
 type MockCamera = {
   id: string;

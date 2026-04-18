@@ -1,21 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import './AlarmsPage.css';
 import { apiFetch } from '../lib/api';
-import { clearAuthToken } from '../lib/auth';
+import { useNotifications } from '../contexts/NotificationsContext';
+import type { AlarmType } from '../contexts/NotificationsContext';
 
 /* ===== Tipovi ===== */
-type AlarmType = 'motion' | 'sound' | 'offline' | 'door' | 'temp';
-
-type Alarm = {
-  id: string;
-  type: AlarmType;
-  camera: string;
-  message: string;
-  time: string;
-  isRead: boolean;
-};
-
 type FilterType = 'all' | AlarmType;
 type FilterStatus = 'all' | 'unread' | 'read';
 
@@ -41,58 +30,24 @@ const formatTime = (iso: string) => {
 
 /* ===== Komponenta ===== */
 function AlarmsPage() {
-  const navigate = useNavigate();
-  const [alarms, setAlarms] = useState<Alarm[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { alarms, isLoading, markAsRead, markAllAsRead, refresh } = useNotifications();
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [isSimulating, setIsSimulating] = useState(false);
 
-  const loadAlarms = async () => {
-    setIsLoading(true);
-    setError('');
+  /* Simuliraj novi alarm (za testiranje real-time notifikacija) */
+  const handleSimulate = async () => {
+    setIsSimulating(true);
     try {
-      const response = await apiFetch('/api/alarms', { includeAuth: true });
-      const data = await response.json();
-
-      if (response.status === 401) {
-        clearAuthToken();
-        navigate('/login', { replace: true });
-        return;
-      }
-
-      if (!response.ok) {
-        setError(data.message || 'Neuspješno dohvaćanje alarma.');
-        return;
-      }
-
-      setAlarms(data.alarms ?? []);
-    } catch {
-      setError('Greška pri dohvaćanju alarma.');
+      await apiFetch('/api/alarms/simulate', {
+        method: 'POST',
+        includeAuth: true,
+        body: JSON.stringify({}),
+      });
+      // Brzi refresh da korisnik odmah vidi novi alarm, bez čekanja na sljedeći poll tick
+      await refresh();
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => { void loadAlarms(); }, [navigate]);
-
-  const markRead = async (id: string) => {
-    const response = await apiFetch(`/api/alarms/${id}/read`, {
-      method: 'PATCH',
-      includeAuth: true,
-    });
-    if (response.ok) {
-      setAlarms((prev) => prev.map((a) => a.id === id ? { ...a, isRead: true } : a));
-    }
-  };
-
-  const markAllRead = async () => {
-    const response = await apiFetch('/api/alarms/read-all', {
-      method: 'PATCH',
-      includeAuth: true,
-    });
-    if (response.ok) {
-      setAlarms((prev) => prev.map((a) => ({ ...a, isRead: true })));
+      setIsSimulating(false);
     }
   };
 
@@ -121,8 +76,20 @@ function AlarmsPage() {
           <span className="alarms-stat alarms-stat-unread">
             Nepročitano: <strong>{unreadCount}</strong>
           </span>
+          <button
+            type="button"
+            className="alarms-simulate-btn"
+            onClick={handleSimulate}
+            disabled={isSimulating}
+            title="Simulira novi alarm iz backenda (za testiranje)"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+            </svg>
+            {isSimulating ? 'Simuliram...' : 'Simuliraj alarm'}
+          </button>
           {unreadCount > 0 && (
-            <button type="button" className="alarms-mark-all-btn" onClick={markAllRead}>
+            <button type="button" className="alarms-mark-all-btn" onClick={() => void markAllAsRead()}>
               Označi sve kao pročitano
             </button>
           )}
@@ -159,13 +126,6 @@ function AlarmsPage() {
         </div>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="alarms-error">
-          <p>{error}</p>
-        </div>
-      )}
-
       {/* Loading */}
       {isLoading && (
         <div className="alarms-loading">
@@ -175,7 +135,7 @@ function AlarmsPage() {
       )}
 
       {/* Tablica */}
-      {!isLoading && !error && (
+      {!isLoading && (
         <>
           {filtered.length === 0 ? (
             <div className="alarms-empty">
@@ -218,7 +178,7 @@ function AlarmsPage() {
                           <button
                             type="button"
                             className="alarm-read-btn"
-                            onClick={() => void markRead(alarm.id)}
+                            onClick={() => void markAsRead(alarm.id)}
                           >
                             Označi pročitanim
                           </button>
