@@ -70,6 +70,39 @@
   color: #fff;
 }
 
+/* ===== Simuliraj gumb (za testiranje real-time) ===== */
+.alarms-simulate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-hover);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.alarms-simulate-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.alarms-simulate-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  border-style: solid;
+}
+
+.alarms-simulate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ===== Filteri ===== */
 .alarms-filters {
   display: flex;
