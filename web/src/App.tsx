@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import CamerasPage from './pages/CamerasPage';
 import CameraDetailPage from './pages/CameraDetailPage';
 import AlarmsPage from './pages/AlarmsPage';
+import SensorsPage from './pages/SensorsPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 import AccountPage from './pages/AccountPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -26,7 +27,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/kamere" element={<CamerasPage />} />
           <Route path="/kamere/:id" element={<CameraDetailPage />} />
-          <Route path="/senzori" element={<PlaceholderPage title="IoT senzori" icon="📡" />} />
+          <Route path="/senzori" element={<SensorsPage />} />
           <Route path="/alarmi" element={<AlarmsPage />} />
           <Route path="/analitika" element={<PlaceholderPage title="Analitika" icon="📊" />} />
           <Route path="/korisnici" element={<PlaceholderPage title="Upravljanje korisnicima" icon="👥" />} />
