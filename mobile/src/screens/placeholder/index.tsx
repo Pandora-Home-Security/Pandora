@@ -1,16 +1,6 @@
 import { AppScreenLayout } from '../../components/AppScreenLayout';
 import { PlaceholderScreen } from '../../components/PlaceholderScreen';
 
-export const CamerasScreen = () => (
-  <AppScreenLayout title="Kamere">
-    <PlaceholderScreen
-      title="Kamere"
-      description="Popis svih kamera, live stream i upravljanje (CRUD) dolaze ovdje."
-      milestone="M3"
-    />
-  </AppScreenLayout>
-);
-
 export const SensorsScreen = () => (
   <AppScreenLayout title="Senzori">
     <PlaceholderScreen

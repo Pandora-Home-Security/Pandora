@@ -3,8 +3,9 @@ import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { AccountScreen } from '../screens/AccountScreen';
+import { CamerasScreen } from '../screens/CamerasScreen';
+import { CameraDetailScreen } from '../screens/CameraDetailScreen';
 import {
-  CamerasScreen,
   SensorsScreen,
   AlarmsScreen,
   AnalyticsScreen,
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Register: undefined;
   Dashboard: undefined;
   Cameras: undefined;
+  CameraDetail: { id: string };
   Sensors: undefined;
   Alarms: undefined;
   Analytics: undefined;
@@ -42,6 +44,7 @@ export function RootStack() {
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Cameras" component={CamerasScreen} />
+      <Stack.Screen name="CameraDetail" component={CameraDetailScreen} />
       <Stack.Screen name="Sensors" component={SensorsScreen} />
       <Stack.Screen name="Alarms" component={AlarmsScreen} />
       <Stack.Screen name="Analytics" component={AnalyticsScreen} />
