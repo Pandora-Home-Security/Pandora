@@ -1,9 +1,14 @@
+/*
+ * SensorsPage — stranica s popisom IoT senzora.
+ * Kartice + tablica, filteri po tipu i statusu.
+ */
+
 /* ===== Zaglavlje ===== */
 .sensors-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
   gap: 1rem;
   flex-wrap: wrap;
 }
@@ -11,14 +16,15 @@
 .sensors-header-left {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 
 .sensors-title {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
 .sensors-subtitle {
@@ -29,30 +35,68 @@
 
 .sensors-header-right {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  align-items: stretch;
+  gap: 0.6rem;
   flex-shrink: 0;
   flex-wrap: wrap;
 }
 
-.sensors-stat {
-  font-size: 0.8rem;
-  padding: 0.4rem 0.75rem;
+/* ===== Stat kartice ===== */
+.sensors-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 0.95rem;
   border-radius: var(--radius-sm);
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
+  transition: border-color 0.2s ease;
+  min-width: 110px;
 }
 
-.sensors-stat strong {
+.sensors-stat-card:hover {
+  border-color: var(--border-hover);
+}
+
+.sensors-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+  flex: 1;
+}
+
+.sensors-stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.05rem;
   font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
 }
 
-.sensors-stat-active strong {
+.sensors-stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sensors-stat-card-active .sensors-stat-dot {
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15);
+}
+
+.sensors-stat-card-active .sensors-stat-value {
   color: #34d399;
 }
 
-.sensors-stat-inactive strong {
+.sensors-stat-card-inactive .sensors-stat-dot {
+  background: #6b7280;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.15);
+}
+
+.sensors-stat-card-inactive .sensors-stat-value {
   color: #9ca3af;
 }
 
@@ -60,50 +104,58 @@
 .sensors-filters {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+  padding: 1rem 1.1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
 }
 
 .sensors-filter-group {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.85rem;
   flex-wrap: wrap;
 }
 
 .sensors-filter-label {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
-  min-width: 40px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  min-width: 44px;
+}
+
+.sensors-filter-segment {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
 }
 
 .sensors-filter-btn {
-  padding: 0.4rem 0.85rem;
+  padding: 0.45rem 0.9rem;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-card);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--text-secondary);
   font-family: 'Outfit', sans-serif;
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
 }
 
 .sensors-filter-btn:hover {
-  border-color: var(--border-hover);
+  background: var(--bg-input);
   color: var(--text-primary);
 }
 
-.sensors-filter-btn-active {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
+.sensors-filter-btn-active,
 .sensors-filter-btn-active:hover {
   background: var(--accent-soft);
-  border-color: var(--accent);
+  border-color: rgba(212, 168, 83, 0.35);
   color: var(--accent);
 }
 
@@ -116,6 +168,9 @@
   padding: 4rem 2rem;
   gap: 0.75rem;
   color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius);
 }
 
 .sensors-empty-icon {
@@ -129,67 +184,167 @@
   font-size: 0.9rem;
 }
 
-/* ===== Kartice ===== */
+/* ===== Grid kartica ===== */
 .sensors-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
+/* ===== Kartica senzora ===== */
 .sensor-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.1rem;
+  padding: 1.2rem;
   border-radius: var(--radius);
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.sensor-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.25), transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
 .sensor-card:hover {
   border-color: var(--border-hover);
   transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.sensor-card:hover::before {
+  opacity: 1;
+}
+
+.sensor-card-glow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  filter: blur(50px);
+  opacity: 0.25;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
 .sensor-card-inactive {
-  opacity: 0.7;
+  opacity: 0.72;
 }
 
+.sensor-card-inactive .sensor-card-glow {
+  display: none;
+}
+
+/* Boje glow-a po tipu senzora */
+.sensor-card:has(.sensor-icon-door)        .sensor-card-glow { background: #34d399; }
+.sensor-card:has(.sensor-icon-window)      .sensor-card-glow { background: #60a5fa; }
+.sensor-card:has(.sensor-icon-smoke)       .sensor-card-glow { background: #9ca3af; }
+.sensor-card:has(.sensor-icon-temperature) .sensor-card-glow { background: #fb923c; }
+.sensor-card:has(.sensor-icon-motion)      .sensor-card-glow { background: #a78bfa; }
+
+/* ===== Header kartice ===== */
 .sensor-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
 }
 
-.sensor-icon {
-  font-size: 1.75rem;
-  line-height: 1;
-}
-
-.sensor-status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.sensor-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
   flex-shrink: 0;
 }
 
-.sensor-status-dot-active {
-  background: #34d399;
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15);
+.sensor-icon-wrap svg {
+  width: 22px;
+  height: 22px;
 }
 
-.sensor-status-dot-inactive {
+.sensor-icon-door        { background: rgba(52, 211, 153, 0.1);  color: #34d399; }
+.sensor-icon-window      { background: rgba(96, 165, 250, 0.1);  color: #60a5fa; }
+.sensor-icon-smoke       { background: rgba(156, 163, 175, 0.1); color: #9ca3af; }
+.sensor-icon-temperature { background: rgba(251, 146, 60, 0.1);  color: #fb923c; }
+.sensor-icon-motion      { background: rgba(167, 139, 250, 0.1); color: #a78bfa; }
+
+/* ===== Status pill ===== */
+.sensor-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.sensor-status-pill .sensor-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.sensor-status-pill-active {
+  background: rgba(52, 211, 153, 0.1);
+  border-color: rgba(52, 211, 153, 0.25);
+  color: #34d399;
+}
+
+.sensor-status-pill-active .sensor-status-dot {
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
+  animation: sensor-pulse 2.4s ease-in-out infinite;
+}
+
+.sensor-status-pill-inactive {
+  background: rgba(107, 114, 128, 0.1);
+  border-color: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+}
+
+.sensor-status-pill-inactive .sensor-status-dot {
   background: #6b7280;
-  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.15);
+}
+
+@keyframes sensor-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2); }
+  50%      { box-shadow: 0 0 0 5px rgba(52, 211, 153, 0.05); }
+}
+
+/* ===== Body kartice ===== */
+.sensor-card-body {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 1rem;
 }
 
 .sensor-card-name {
-  margin: 0;
+  margin: 0 0 0.6rem;
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
+  line-height: 1.3;
 }
 
 .sensor-card-meta {
@@ -197,71 +352,102 @@
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
 .sensor-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   color: var(--text-muted);
 }
 
-.sensor-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.sensor-last-reading {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+.sensor-meta-icon {
+  width: 12px;
+  height: 12px;
+  opacity: 0.7;
+  flex-shrink: 0;
 }
 
 /* ===== Tip badge ===== */
 .sensor-type-badge {
   display: inline-block;
-  padding: 0.2rem 0.55rem;
+  padding: 0.22rem 0.55rem;
   border-radius: 4px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.sensor-type-door        { background: rgba(52, 211, 153, 0.12);  color: #34d399; }
+.sensor-type-window      { background: rgba(96, 165, 250, 0.12);  color: #60a5fa; }
+.sensor-type-smoke       { background: rgba(156, 163, 175, 0.12); color: #9ca3af; }
+.sensor-type-temperature { background: rgba(251, 146, 60, 0.12);  color: #fb923c; }
+.sensor-type-motion      { background: rgba(167, 139, 250, 0.12); color: #a78bfa; }
+
+/* ===== Footer kartice (očitanje) ===== */
+.sensor-card-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  margin-top: auto;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.sensor-reading-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
   letter-spacing: 0.05em;
-  white-space: nowrap;
+  font-weight: 500;
 }
 
-.sensor-type-door        { background: rgba(52, 211, 153, 0.15);  color: #34d399; }
-.sensor-type-window      { background: rgba(96, 165, 250, 0.15);  color: #60a5fa; }
-.sensor-type-smoke       { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
-.sensor-type-temperature { background: rgba(251, 146, 60, 0.15);  color: #fb923c; }
-.sensor-type-motion      { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
-
-/* ===== Status badge ===== */
-.sensor-status-badge {
-  display: inline-block;
-  padding: 0.2rem 0.55rem;
-  border-radius: 4px;
-  font-size: 0.72rem;
+.sensor-reading-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
   font-weight: 600;
-  white-space: nowrap;
+  color: var(--text-primary);
 }
 
-.sensor-status-active {
-  background: rgba(52, 211, 153, 0.15);
-  color: #34d399;
+/* ===== Tablica — sekcija ===== */
+.sensors-table-section {
+  margin-top: 0.5rem;
 }
 
-.sensor-status-inactive {
-  background: rgba(107, 114, 128, 0.15);
-  color: #9ca3af;
+.sensors-table-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  gap: 1rem;
 }
 
-/* ===== Tablica ===== */
+.sensors-table-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sensors-table-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
 .sensors-table-wrapper {
   overflow-x: auto;
   border-radius: var(--radius);
   border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
 }
 
 .sensors-table {
@@ -271,25 +457,33 @@
 }
 
 .sensors-table thead tr {
-  background: var(--bg-card);
+  background: rgba(0, 0, 0, 0.15);
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .sensors-table th {
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1.1rem;
   text-align: left;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
 .sensors-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1.1rem;
   border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
+}
+
+.sensors-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.sensors-table tbody tr:hover {
+  background: rgba(212, 168, 83, 0.03);
 }
 
 .sensors-table tbody tr:last-child td {
@@ -301,13 +495,34 @@
   color: var(--text-primary);
 }
 
+.sensor-cell-name-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.sensor-cell-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+.sensor-cell-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
 .sensor-cell-location {
   color: var(--text-secondary);
 }
 
 .sensor-cell-reading {
   font-family: 'JetBrains Mono', monospace;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 0.82rem;
   white-space: nowrap;
 }
@@ -316,16 +531,28 @@
 @media (max-width: 900px) {
   .sensors-header {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .sensors-header-right {
     flex-shrink: unset;
   }
+
+  .sensors-stat-card {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sensors-filter-group {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 }
 
 @media (max-width: 640px) {
   .sensors-title {
-    font-size: 1.3rem;
+    font-size: 1.35rem;
   }
 
   .sensors-grid {
@@ -334,6 +561,10 @@
 
   .sensors-table th,
   .sensors-table td {
-    padding: 0.6rem 0.7rem;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .sensors-filters {
+    padding: 0.85rem;
   }
 }
