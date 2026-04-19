@@ -18,9 +18,9 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { apiFetch } from '../../lib/api';
 import { setAuthSession } from '../../lib/auth';
-import type { AuthStackParamList } from '../../navigation/AuthStack';
+import type { RootStackParamList } from '../../navigation/RootStack';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation, route }: Props) {
   const justRegistered = route.params?.justRegistered === true;
@@ -66,7 +66,7 @@ export function LoginScreen({ navigation, route }: Props) {
         return;
       }
       setAuthSession(data.token, data.user);
-      navigation.replace('Home');
+      navigation.reset({ index: 0, routes: [{ name: 'Dashboard' }] });
     } catch {
       setError('Greška pri povezivanju sa serverom.');
     } finally {
