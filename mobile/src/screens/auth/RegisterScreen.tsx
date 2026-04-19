@@ -17,9 +17,9 @@ import { Alert } from '../../components/Alert';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { apiFetch } from '../../lib/api';
-import type { AuthStackParamList } from '../../navigation/AuthStack';
+import type { RootStackParamList } from '../../navigation/RootStack';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
 export function RegisterScreen({ navigation }: Props) {
   const [ime, setIme] = useState('');

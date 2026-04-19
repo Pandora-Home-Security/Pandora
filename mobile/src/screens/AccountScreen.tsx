@@ -10,14 +10,16 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { apiFetch } from '../lib/api';
-import { getAuthToken, getAuthUser, setAuthSession, clearAuthSession } from '../lib/auth';
+import { getAuthUser, setAuthSession, clearAuthSession } from '../lib/auth';
+import { AppScreenLayout } from '../components/AppScreenLayout';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
-import type { AuthStackParamList } from '../navigation/AuthStack';
+import type { RootStackParamList, RootStackNavigation } from '../navigation/RootStack';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Account'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Account'>;
 
 type AlertState = { type: 'success' | 'error'; message: string } | null;
 
@@ -30,8 +32,14 @@ function decodeTokenUser(token: string): { id: string; ime: string; email: strin
   }
 }
 
-export function AccountScreen({ navigation }: Props) {
+export function AccountScreen({ navigation: _navigation }: Props) {
+  const rootNav = useNavigation<RootStackNavigation>();
   const currentUser = getAuthUser();
+
+  const redirectToLogin = () => {
+    clearAuthSession();
+    rootNav.reset({ index: 0, routes: [{ name: 'Login' }] });
+  };
 
   const [ime, setIme] = useState(currentUser?.ime ?? '');
   const [email, setEmail] = useState(currentUser?.email ?? '');
@@ -63,8 +71,7 @@ export function AccountScreen({ navigation }: Props) {
       const data = await res.json();
 
       if (res.status === 401) {
-        clearAuthSession();
-        navigation.replace('Login', {});
+        redirectToLogin();
         return;
       }
 
@@ -113,8 +120,7 @@ export function AccountScreen({ navigation }: Props) {
       const data = await res.json();
 
       if (res.status === 401) {
-        clearAuthSession();
-        navigation.replace('Login', {});
+        redirectToLogin();
         return;
       }
 
@@ -135,12 +141,17 @@ export function AccountScreen({ navigation }: Props) {
   };
 
   return (
+    <AppScreenLayout title="Moj račun">
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={8}>
-            <Text style={styles.backText}>← Nazad</Text>
+          <TouchableOpacity
+            onPress={() => rootNav.navigate('Dashboard')}
+            style={styles.backBtn}
+            hitSlop={8}
+          >
+            <Text style={styles.backText}>← Dashboard</Text>
           </TouchableOpacity>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>👤</Text>
@@ -276,6 +287,7 @@ export function AccountScreen({ navigation }: Props) {
         </View>
       </ScrollView>
     </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 
