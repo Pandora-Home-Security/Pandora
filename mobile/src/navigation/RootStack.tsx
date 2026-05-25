@@ -5,9 +5,9 @@ import { DashboardScreen } from '../screens/DashboardScreen';
 import { AccountScreen } from '../screens/AccountScreen';
 import { CamerasScreen } from '../screens/CamerasScreen';
 import { CameraDetailScreen } from '../screens/CameraDetailScreen';
+import { AlarmsScreen } from '../screens/AlarmsScreen';
 import {
   SensorsScreen,
-  AlarmsScreen,
   AnalyticsScreen,
   UsersScreen,
 } from '../screens/placeholder';
