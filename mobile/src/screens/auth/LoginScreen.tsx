@@ -18,11 +18,13 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { apiFetch } from '../../lib/api';
 import { setAuthSession } from '../../lib/auth';
+import { useNotifications } from '../../contexts/NotificationsContext';
 import type { RootStackParamList } from '../../navigation/RootStack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation, route }: Props) {
+  const { refresh: refreshNotifications } = useNotifications();
   const justRegistered = route.params?.justRegistered === true;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -66,6 +68,8 @@ export function LoginScreen({ navigation, route }: Props) {
         return;
       }
       setAuthSession(data.token, data.user);
+      // Odmah napuni alarme — bez čekanja na sljedeći poll tick
+      void refreshNotifications();
       navigation.reset({ index: 0, routes: [{ name: 'Dashboard' }] });
     } catch {
       setError('Greška pri povezivanju sa serverom.');

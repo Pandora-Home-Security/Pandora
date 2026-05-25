@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -8,27 +8,18 @@ import {
   Pressable,
   RefreshControl,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { AppScreenLayout } from '../components/AppScreenLayout';
 import { apiFetch } from '../lib/api';
-import { clearAuthSession } from '../lib/auth';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
-import type { RootStackNavigation } from '../navigation/RootStack';
+import {
+  useNotifications,
+  type Alarm,
+  type AlarmType,
+} from '../contexts/NotificationsContext';
 
 /* ===== Tipovi ===== */
-type AlarmType = 'motion' | 'sound' | 'offline' | 'door' | 'temp';
-
-type Alarm = {
-  id: string;
-  type: AlarmType;
-  camera: string;
-  message: string;
-  time: string;
-  isRead: boolean;
-};
-
 type FilterType = 'all' | AlarmType;
 type FilterStatus = 'all' | 'unread' | 'read';
 
@@ -79,53 +70,28 @@ function statusFilterLabel(s: FilterStatus) {
 
 /* ===== Komponenta ===== */
 export function AlarmsScreen() {
-  const navigation = useNavigation<RootStackNavigation>();
-  const [alarms, setAlarms] = useState<Alarm[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState('');
+  const {
+    alarms,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    refresh,
+  } = useNotifications();
+
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [isSimulating, setIsSimulating] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchAlarms = useCallback(
-    async (isRefresh = false) => {
-      if (!isRefresh) setLoading(true);
-      setError('');
-
-      try {
-        const res = await apiFetch('/api/alarms', { includeAuth: true });
-
-        if (res.status === 401) {
-          clearAuthSession();
-          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-          return;
-        }
-
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.message || 'Neuspješno dohvaćanje alarma.');
-          return;
-        }
-        setAlarms(data.alarms ?? []);
-      } catch {
-        setError('Greška pri dohvaćanju alarma.');
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [navigation]
-  );
-
-  useEffect(() => {
-    void fetchAlarms();
-  }, [fetchAlarms]);
-
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    void fetchAlarms(true);
-  }, [fetchAlarms]);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refresh]);
 
   const handleSimulate = async () => {
     setIsSimulating(true);
@@ -135,41 +101,11 @@ export function AlarmsScreen() {
         includeAuth: true,
         body: JSON.stringify({}),
       });
-      await fetchAlarms(true);
+      await refresh();
     } catch {
-      // tiho ignoriraj — kasnije ćemo dodati toast
+      // tiho ignoriraj
     } finally {
       setIsSimulating(false);
-    }
-  };
-
-  const handleMarkAsRead = async (alarmId: string) => {
-    // Optimistic update
-    setAlarms((prev) => prev.map((a) => (a.id === alarmId ? { ...a, isRead: true } : a)));
-    try {
-      const res = await apiFetch(`/api/alarms/${alarmId}/read`, {
-        method: 'PATCH',
-        includeAuth: true,
-      });
-      if (!res.ok) {
-        // Rollback ako fail
-        void fetchAlarms(true);
-      }
-    } catch {
-      void fetchAlarms(true);
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    setAlarms((prev) => prev.map((a) => ({ ...a, isRead: true })));
-    try {
-      const res = await apiFetch('/api/alarms/read-all', {
-        method: 'PATCH',
-        includeAuth: true,
-      });
-      if (!res.ok) void fetchAlarms(true);
-    } catch {
-      void fetchAlarms(true);
     }
   };
 
@@ -179,8 +115,6 @@ export function AlarmsScreen() {
     if (filterStatus === 'read' && !a.isRead) return false;
     return true;
   });
-
-  const unreadCount = alarms.filter((a) => !a.isRead).length;
 
   return (
     <AppScreenLayout title="Alarmi">
@@ -258,7 +192,7 @@ export function AlarmsScreen() {
 
           {unreadCount > 0 && (
             <Pressable
-              onPress={handleMarkAllAsRead}
+              onPress={() => void markAllAsRead()}
               style={({ pressed }) => [
                 styles.markAllBtn,
                 pressed && styles.markAllBtnPressed,
@@ -303,20 +237,14 @@ export function AlarmsScreen() {
           </View>
         </View>
 
-        {!!error && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-
-        {loading && (
+        {isLoading && alarms.length === 0 && (
           <View style={styles.loader}>
             <ActivityIndicator color={colors.accent} />
             <Text style={styles.loaderText}>Učitavanje alarma...</Text>
           </View>
         )}
 
-        {!loading && !error && filtered.length === 0 && (
+        {!isLoading && filtered.length === 0 && (
           <View style={styles.empty}>
             <Svg
               viewBox="0 0 24 24"
@@ -336,13 +264,13 @@ export function AlarmsScreen() {
           </View>
         )}
 
-        {!loading && filtered.length > 0 && (
+        {filtered.length > 0 && (
           <View style={styles.list}>
             {filtered.map((alarm) => (
               <AlarmCard
                 key={alarm.id}
                 alarm={alarm}
-                onMarkAsRead={() => void handleMarkAsRead(alarm.id)}
+                onMarkAsRead={() => void markAsRead(alarm.id)}
               />
             ))}
           </View>
@@ -388,11 +316,9 @@ function AlarmCard({
 
   return (
     <View style={[styles.card, !alarm.isRead && styles.cardUnread]}>
-      {/* Lijevi rub - boja po tipu */}
       <View style={[styles.cardAccent, { backgroundColor: tone }]} />
 
       <View style={styles.cardBody}>
-        {/* Top: tip badge + status */}
         <View style={styles.cardTopRow}>
           <View style={[styles.typeBadge, { borderColor: tone }]}>
             <Text style={[styles.typeBadgeText, { color: tone }]}>
@@ -416,16 +342,13 @@ function AlarmCard({
           </View>
         </View>
 
-        {/* Poruka */}
         <Text style={styles.cardMessage} numberOfLines={3}>
           {alarm.message}
         </Text>
 
-        {/* Meta: kamera + vrijeme */}
         <View style={styles.cardMeta}>
           <View style={styles.metaItem}>
             <Svg viewBox="0 0 20 20" width={12} height={12} fill={colors.textMuted}>
-              <Path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-3c0-.83.67-1.5 1.5-1.5h3c.83 0 1.5.67 1.5 1.5v3c0 .83-.67 1.5-1.5 1.5h-3zm-9 11.5c-.83 0-1.5-.67-1.5-1.5v-3c0-.83.67-1.5 1.5-1.5h3c.83 0 1.5.67 1.5 1.5v3c0 .83-.67 1.5-1.5 1.5h-3z" />
               <Path d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
             </Svg>
             <Text style={styles.metaText} numberOfLines={1}>
@@ -435,7 +358,6 @@ function AlarmCard({
           <Text style={styles.metaTime}>{formatTime(alarm.time)}</Text>
         </View>
 
-        {/* Akcija */}
         {!alarm.isRead && (
           <Pressable
             onPress={onMarkAsRead}
@@ -580,17 +502,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  errorBox: {
-    backgroundColor: colors.errorBg,
-    borderWidth: 1,
-    borderColor: colors.errorBorder,
-    borderRadius: radius.input,
-    padding: 12,
-  },
-  errorText: {
-    ...typography.alert,
-    color: colors.errorText,
-  },
   loader: {
     flexDirection: 'row',
     alignItems: 'center',

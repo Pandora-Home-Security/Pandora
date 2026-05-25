@@ -14,7 +14,7 @@ import { useNavigation, useNavigationState } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { mockUnreadCount } from '../data/mockData';
+import { useNotifications } from '../contexts/NotificationsContext';
 import type { RootStackParamList, RootStackNavigation } from '../navigation/RootStack';
 
 type NavRoute = keyof RootStackParamList;
@@ -46,7 +46,6 @@ const navItems: NavItem[] = [
     route: 'Alarms',
     label: 'Alarmi',
     icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
-    badge: mockUnreadCount,
   },
   {
     route: 'Analytics',
@@ -74,6 +73,7 @@ type Props = {
 
 export function DrawerMenu({ visible, onClose }: Props) {
   const navigation = useNavigation<RootStackNavigation>();
+  const { unreadCount } = useNotifications();
   const activeRoute = useNavigationState((state) =>
     state ? state.routes[state.index]?.name : undefined
   );
@@ -171,6 +171,7 @@ export function DrawerMenu({ visible, onClose }: Props) {
             >
               {navItems.map((item) => {
                 const isActive = activeRoute === item.route;
+                const badge = item.route === 'Alarms' ? unreadCount : item.badge ?? 0;
                 return (
                   <Pressable
                     key={item.route}
@@ -196,10 +197,10 @@ export function DrawerMenu({ visible, onClose }: Props) {
                     <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
                       {item.label}
                     </Text>
-                    {item.badge && item.badge > 0 ? (
+                    {badge > 0 ? (
                       <View style={styles.badge}>
                         <Text style={styles.badgeText}>
-                          {item.badge > 99 ? '99+' : String(item.badge)}
+                          {badge > 99 ? '99+' : String(badge)}
                         </Text>
                       </View>
                     ) : null}
