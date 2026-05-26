@@ -222,9 +222,20 @@ app.post('/api/device-events', authenticateDevice, async (req: DeviceAuthenticat
 
 app.get('/api/sensors', authenticateRequest, async (_req: AuthenticatedRequest, res) => {
   const result = await pool.query(
-    `SELECT id::text AS id, name, type, location, status,
-            last_seen, created_at
-     FROM devices ORDER BY created_at DESC`,
+    `SELECT d.id::text AS id, d.name, d.type, d.location, d.status,
+            d.last_seen, d.created_at,
+            le.event_type  AS last_event_type,
+            le.payload     AS last_event_payload,
+            le.created_at  AS last_event_time
+     FROM devices d
+     LEFT JOIN LATERAL (
+       SELECT event_type, payload, created_at
+       FROM device_events
+       WHERE device_id = d.id
+       ORDER BY created_at DESC
+       LIMIT 1
+     ) le ON true
+     ORDER BY d.created_at DESC`,
   );
   res.json({ sensors: result.rows });
 });

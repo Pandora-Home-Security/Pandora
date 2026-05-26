@@ -16,6 +16,9 @@ type Sensor = {
   api_key?: string;
   last_seen: string | null;
   created_at: string;
+  last_event_type: string | null;
+  last_event_payload: Record<string, unknown> | null;
+  last_event_time: string | null;
 };
 
 type DeviceEvent = {
@@ -28,6 +31,29 @@ type DeviceEvent = {
 
 type FilterType = 'all' | SensorType;
 type FilterStatus = 'all' | 'active' | 'inactive';
+type FilterConnection = 'all' | 'online' | 'offline';
+
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+
+function isOnline(lastSeen: string | null): boolean {
+  if (!lastSeen) return false;
+  return Date.now() - new Date(lastSeen).getTime() < ONLINE_THRESHOLD_MS;
+}
+
+function formatLastReading(sensor: Sensor): string {
+  if (!sensor.last_event_payload || !sensor.last_event_type) return '—';
+  const p = sensor.last_event_payload;
+  if (p.temperature !== undefined) {
+    const temp = `${p.temperature} °C`;
+    return p.humidity !== undefined ? `${temp} / ${p.humidity}%` : temp;
+  }
+  if (p.state !== undefined) return String(p.state) === 'open' ? 'Otvoreno' : 'Zatvoreno';
+  if (p.smoke_level !== undefined) return Number(p.smoke_level) > 0.5 ? 'Dim detektiran!' : 'OK';
+  if (p.motion !== undefined) return p.motion ? 'Pokret!' : 'Mirno';
+  if (p.level !== undefined) return `Baterija: ${p.level}%`;
+  if (p.message !== undefined) return String(p.message);
+  return eventTypeLabels[sensor.last_event_type] ?? '—';
+}
 
 /* ===== Pomoćne konstante ===== */
 const typeLabels: Record<SensorType, string> = {
@@ -100,6 +126,17 @@ const PinIcon = () => (
   </svg>
 );
 
+function relativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return 'Upravo';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `Prije ${min} min`;
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return `Prije ${hrs}h`;
+  return new Date(dateStr).toLocaleDateString('hr-HR');
+}
+
 /* ===== Komponenta ===== */
 function SensorsPage() {
   const [sensors, setSensors] = useState<Sensor[]>([]);
@@ -108,6 +145,7 @@ function SensorsPage() {
 
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [filterConnection, setFilterConnection] = useState<FilterConnection>('all');
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [editSensor, setEditSensor] = useState<Sensor | null>(null);
@@ -207,13 +245,20 @@ function SensorsPage() {
       sensors.filter((s) => {
         if (filterType !== 'all' && s.type !== filterType) return false;
         if (filterStatus !== 'all' && s.status !== filterStatus) return false;
+        if (filterConnection !== 'all') {
+          const online = isOnline(s.last_seen);
+          if (filterConnection === 'online' && !online) return false;
+          if (filterConnection === 'offline' && online) return false;
+        }
         return true;
       }),
-    [sensors, filterType, filterStatus],
+    [sensors, filterType, filterStatus, filterConnection],
   );
 
   const activeCount = sensors.filter((s) => s.status === 'active').length;
   const inactiveCount = sensors.length - activeCount;
+  const onlineCount = sensors.filter((s) => isOnline(s.last_seen)).length;
+  const offlineCount = sensors.length - onlineCount;
 
   if (loading) {
     return (
@@ -257,6 +302,16 @@ function SensorsPage() {
             <span className="sensors-stat-label">Neaktivni</span>
             <span className="sensors-stat-value">{inactiveCount}</span>
           </div>
+          <div className="sensors-stat-card sensors-stat-card-online">
+            <span className="sensors-stat-dot" />
+            <span className="sensors-stat-label">Online</span>
+            <span className="sensors-stat-value">{onlineCount}</span>
+          </div>
+          <div className="sensors-stat-card sensors-stat-card-offline">
+            <span className="sensors-stat-dot" />
+            <span className="sensors-stat-label">Offline</span>
+            <span className="sensors-stat-value">{offlineCount}</span>
+          </div>
         </div>
       </div>
 
@@ -294,6 +349,21 @@ function SensorsPage() {
             ))}
           </div>
         </div>
+        <div className="sensors-filter-group">
+          <span className="sensors-filter-label">Veza</span>
+          <div className="sensors-filter-segment">
+            {(['all', 'online', 'offline'] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                className={`sensors-filter-btn ${filterConnection === c ? 'sensors-filter-btn-active' : ''}`}
+                onClick={() => setFilterConnection(c)}
+              >
+                {c === 'all' ? 'Svi' : c === 'online' ? 'Online' : 'Offline'}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Prikaz senzora */}
@@ -308,63 +378,74 @@ function SensorsPage() {
         <>
           {/* Kartice */}
           <div className="sensors-grid">
-            {filtered.map((sensor) => (
-              <article
-                key={sensor.id}
-                className={`sensor-card sensor-card-${sensor.status} ${selectedSensorId === sensor.id ? 'sensor-card-selected' : ''}`}
-                onClick={() => handleCardClick(sensor)}
-              >
-                <div className="sensor-card-glow" aria-hidden="true" />
-                <div className="sensor-card-header">
-                  <div className={`sensor-icon-wrap sensor-icon-${sensor.type}`} aria-hidden="true">
-                    <SensorIcon type={sensor.type} />
+            {filtered.map((sensor) => {
+              const online = isOnline(sensor.last_seen);
+              return (
+                <article
+                  key={sensor.id}
+                  className={`sensor-card sensor-card-${sensor.status} ${selectedSensorId === sensor.id ? 'sensor-card-selected' : ''}`}
+                  onClick={() => handleCardClick(sensor)}
+                >
+                  <div className="sensor-card-glow" aria-hidden="true" />
+                  <div className="sensor-card-header">
+                    <div className={`sensor-icon-wrap sensor-icon-${sensor.type}`} aria-hidden="true">
+                      <SensorIcon type={sensor.type} />
+                    </div>
+                    <div className="sensor-card-actions">
+                      <button
+                        type="button"
+                        className="sensor-action-btn"
+                        title="Uredi"
+                        onClick={(e) => { e.stopPropagation(); setEditSensor(sensor); }}
+                      >
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" /></svg>
+                      </button>
+                      <button
+                        type="button"
+                        className="sensor-action-btn sensor-action-btn-danger"
+                        title="Obriši"
+                        onClick={(e) => { e.stopPropagation(); setDeleteSensor(sensor); }}
+                      >
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 01.7.797l-.5 6a.75.75 0 01-1.497-.126l.5-6a.75.75 0 01.797-.67zm3.637.797a.75.75 0 10-1.497-.126l-.5 6a.75.75 0 101.497.126l.5-6z" clipRule="evenodd" /></svg>
+                      </button>
+                    </div>
                   </div>
-                  <div className="sensor-card-actions">
-                    <button
-                      type="button"
-                      className="sensor-action-btn"
-                      title="Uredi"
-                      onClick={(e) => { e.stopPropagation(); setEditSensor(sensor); }}
-                    >
-                      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" /></svg>
-                    </button>
-                    <button
-                      type="button"
-                      className="sensor-action-btn sensor-action-btn-danger"
-                      title="Obriši"
-                      onClick={(e) => { e.stopPropagation(); setDeleteSensor(sensor); }}
-                    >
-                      <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 01.7.797l-.5 6a.75.75 0 01-1.497-.126l.5-6a.75.75 0 01.797-.67zm3.637.797a.75.75 0 10-1.497-.126l-.5 6a.75.75 0 101.497.126l.5-6z" clipRule="evenodd" /></svg>
-                    </button>
-                  </div>
-                </div>
 
-                <div className="sensor-card-body">
-                  <h3 className="sensor-card-name">{sensor.name}</h3>
-                  <div className="sensor-card-meta">
-                    <span className={`sensor-type-badge sensor-type-${sensor.type}`}>
-                      {typeLabels[sensor.type]}
-                    </span>
-                    <span className="sensor-location">
-                      <PinIcon />
-                      {sensor.location}
-                    </span>
+                  <div className="sensor-card-body">
+                    <h3 className="sensor-card-name">{sensor.name}</h3>
+                    <div className="sensor-card-meta">
+                      <span className={`sensor-type-badge sensor-type-${sensor.type}`}>
+                        {typeLabels[sensor.type]}
+                      </span>
+                      <span className="sensor-location">
+                        <PinIcon />
+                        {sensor.location}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="sensor-card-footer">
-                  <div className={`sensor-status-pill sensor-status-pill-${sensor.status}`}>
-                    <span className="sensor-status-dot" />
-                    {sensor.status === 'active' ? 'Aktivan' : 'Neaktivan'}
+                  <div className="sensor-card-footer">
+                    <div className="sensor-card-footer-left">
+                      <div className={`sensor-status-pill sensor-status-pill-${sensor.status}`}>
+                        <span className="sensor-status-dot" />
+                        {sensor.status === 'active' ? 'Aktivan' : 'Neaktivan'}
+                      </div>
+                      <div className={`sensor-connection-pill ${online ? 'sensor-connection-online' : 'sensor-connection-offline'}`}>
+                        <span className="sensor-connection-dot" />
+                        {online ? 'Online' : 'Offline'}
+                      </div>
+                    </div>
+                    <div className="sensor-card-footer-right">
+                      <span className="sensor-reading-label">Zadnje očitanje</span>
+                      <span className="sensor-reading-value">{formatLastReading(sensor)}</span>
+                      {sensor.last_seen && (
+                        <span className="sensor-last-seen">{relativeTime(sensor.last_seen)}</span>
+                      )}
+                    </div>
                   </div>
-                  <span className="sensor-reading-value">
-                    {sensor.last_seen
-                      ? new Date(sensor.last_seen).toLocaleString('hr-HR')
-                      : 'Nikad'}
-                  </span>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
 
           {/* Panel s događajima odabranog senzora */}
@@ -432,40 +513,46 @@ function SensorsPage() {
                     <th>Naziv</th>
                     <th>Tip</th>
                     <th>Lokacija</th>
-                    <th>Zadnje viđen</th>
+                    <th>Zadnje očitanje</th>
+                    <th>Veza</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((sensor) => (
-                    <tr key={sensor.id}>
-                      <td className="sensor-cell-name">
-                        <div className="sensor-cell-name-inner">
-                          <span className={`sensor-cell-icon sensor-icon-${sensor.type}`}>
-                            <SensorIcon type={sensor.type} />
+                  {filtered.map((sensor) => {
+                    const online = isOnline(sensor.last_seen);
+                    return (
+                      <tr key={sensor.id}>
+                        <td className="sensor-cell-name">
+                          <div className="sensor-cell-name-inner">
+                            <span className={`sensor-cell-icon sensor-icon-${sensor.type}`}>
+                              <SensorIcon type={sensor.type} />
+                            </span>
+                            {sensor.name}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`sensor-type-badge sensor-type-${sensor.type}`}>
+                            {typeLabels[sensor.type]}
                           </span>
-                          {sensor.name}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`sensor-type-badge sensor-type-${sensor.type}`}>
-                          {typeLabels[sensor.type]}
-                        </span>
-                      </td>
-                      <td className="sensor-cell-location">{sensor.location}</td>
-                      <td className="sensor-cell-reading">
-                        {sensor.last_seen
-                          ? new Date(sensor.last_seen).toLocaleString('hr-HR')
-                          : '—'}
-                      </td>
-                      <td>
-                        <span className={`sensor-status-pill sensor-status-pill-${sensor.status}`}>
-                          <span className="sensor-status-dot" />
-                          {sensor.status === 'active' ? 'Aktivan' : 'Neaktivan'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="sensor-cell-location">{sensor.location}</td>
+                        <td className="sensor-cell-reading">{formatLastReading(sensor)}</td>
+                        <td>
+                          <span className={`sensor-connection-pill ${online ? 'sensor-connection-online' : 'sensor-connection-offline'}`}>
+                            <span className="sensor-connection-dot" />
+                            {online ? 'Online' : 'Offline'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`sensor-status-pill sensor-status-pill-${sensor.status}`}>
+                            <span className="sensor-status-dot" />
+                            {sensor.status === 'active' ? 'Aktivan' : 'Neaktivan'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

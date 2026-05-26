@@ -19,28 +19,29 @@ type MockAlarm = {
   type: 'motion' | 'door' | 'temp' | 'connection';
 };
 
-type MockSensor = {
+type Sensor = {
   id: string;
   name: string;
+  type: string;
+  location: string;
   status: 'active' | 'inactive';
+  last_seen: string | null;
 };
 
-/* ===== Mock podaci (dok se M4/M5 ne implementiraju) ===== */
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+
+function isSensorOnline(lastSeen: string | null): boolean {
+  if (!lastSeen) return false;
+  return Date.now() - new Date(lastSeen).getTime() < ONLINE_THRESHOLD_MS;
+}
+
+/* ===== Mock alarmi (dok M4 ne koristi pravi API) ===== */
 const mockAlarms: MockAlarm[] = [
   { id: '1', message: 'Pokret detektiran - Ulazna vrata', time: 'Prije 5 minuta', type: 'motion' },
   { id: '2', message: 'Vrata otvorena - Garaža', time: 'Prije 23 minute', type: 'door' },
   { id: '3', message: 'Temperatura previsoka - Spremište', time: 'Prije 1 sat', type: 'temp' },
   { id: '4', message: 'Pokret detektiran - Dnevni boravak', time: 'Prije 2 sata', type: 'motion' },
   { id: '5', message: 'Gubitak veze - Senzor dvorište', time: 'Prije 3 sata', type: 'connection' },
-];
-
-const mockSensors: MockSensor[] = [
-  { id: '1', name: 'Vrata - Ulaz', status: 'active' },
-  { id: '2', name: 'Prozor - Dnevni boravak', status: 'active' },
-  { id: '3', name: 'Temperatura - Spremište', status: 'active' },
-  { id: '4', name: 'Dim - Kuhinja', status: 'active' },
-  { id: '5', name: 'Vrata - Garaža', status: 'inactive' },
-  { id: '6', name: 'Pokret - Dvorište', status: 'inactive' },
 ];
 
 const alarmTypeIcons: Record<MockAlarm['type'], string> = {
@@ -54,46 +55,54 @@ const alarmTypeIcons: Record<MockAlarm['type'], string> = {
 function DashboardPage() {
   const navigate = useNavigate();
   const [cameras, setCameras] = useState<Camera[]>([]);
+  const [sensors, setSensors] = useState<Sensor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadCameras = async () => {
+    const loadData = async () => {
       setIsLoading(true);
       setError('');
 
       try {
-        const response = await apiFetch('/api/cameras', {
-          includeAuth: true,
-        });
-        const data = await response.json();
+        const [camRes, senRes] = await Promise.all([
+          apiFetch('/api/cameras', { includeAuth: true }),
+          apiFetch('/api/sensors', { includeAuth: true }),
+        ]);
 
-        if (response.status === 401) {
+        if (camRes.status === 401 || senRes.status === 401) {
           clearAuthToken();
           navigate('/login', { replace: true });
           return;
         }
 
-        if (!response.ok) {
-          setError(data.message || 'Neuspješno dohvaćanje kamera.');
-          return;
+        if (camRes.ok) {
+          const camData = await camRes.json();
+          setCameras(camData.cameras ?? []);
         }
 
-        setCameras(data.cameras ?? []);
+        if (senRes.ok) {
+          const senData = await senRes.json();
+          setSensors(senData.sensors ?? []);
+        }
+
+        if (!camRes.ok && !senRes.ok) {
+          setError('Greška pri dohvaćanju podataka.');
+        }
       } catch {
-        setError('Greška pri dohvaćanju zaštićenih podataka.');
+        setError('Greška pri dohvaćanju podataka.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    void loadCameras();
+    void loadData();
   }, [navigate]);
 
   /* Izračunate vrijednosti za stat kartice */
   const activeCameras = cameras.filter((c) => c.isOnline).length;
-  const activeSensors = mockSensors.filter((s) => s.status === 'active').length;
-  const inactiveSensors = mockSensors.length - activeSensors;
+  const activeSensors = sensors.filter((s) => s.status === 'active').length;
+  const onlineSensors = sensors.filter((s) => isSensorOnline(s.last_seen)).length;
   const unreadAlarms = mockAlarms.length;
 
   return (
@@ -112,8 +121,19 @@ function DashboardPage() {
         <div className="stat-card">
           <div className="stat-icon stat-icon-sensors">IOT</div>
           <div className="stat-info">
-            <span className="stat-value">{activeSensors}/{mockSensors.length}</span>
+            <span className="stat-value">
+              {isLoading ? '...' : `${activeSensors}/${sensors.length}`}
+            </span>
             <span className="stat-label">Aktivni senzori</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon stat-icon-online">NET</div>
+          <div className="stat-info">
+            <span className="stat-value">
+              {isLoading ? '...' : `${onlineSensors}/${sensors.length}`}
+            </span>
+            <span className="stat-label">Online senzori</span>
           </div>
         </div>
         <div className="stat-card">
@@ -156,21 +176,28 @@ function DashboardPage() {
         <section className="panel panel-sensors">
           <h3 className="panel-title">Status senzora</h3>
           <div className="sensor-summary">
-            <span className="sensor-summary-active">Aktivni: {activeSensors}</span>
+            <span className="sensor-summary-active">Online: {onlineSensors}</span>
             <span className="sensor-summary-divider">|</span>
-            <span className="sensor-summary-inactive">Neaktivni: {inactiveSensors}</span>
+            <span className="sensor-summary-inactive">Offline: {sensors.length - onlineSensors}</span>
           </div>
-          <ul className="sensor-list">
-            {mockSensors.map((sensor) => (
-              <li key={sensor.id} className="sensor-item">
-                <span className={`sensor-dot ${sensor.status === 'active' ? 'sensor-dot-active' : 'sensor-dot-inactive'}`} />
-                <span className="sensor-name">{sensor.name}</span>
-                <span className={`sensor-status ${sensor.status === 'active' ? 'sensor-status-active' : 'sensor-status-inactive'}`}>
-                  {sensor.status === 'active' ? 'Aktivan' : 'Neaktivan'}
-                </span>
-              </li>
-            ))}
-          </ul>
+          {isLoading ? (
+            <p className="loading-text">Učitavanje senzora...</p>
+          ) : (
+            <ul className="sensor-list">
+              {sensors.map((sensor) => {
+                const online = isSensorOnline(sensor.last_seen);
+                return (
+                  <li key={sensor.id} className="sensor-item">
+                    <span className={`sensor-dot ${online ? 'sensor-dot-online' : 'sensor-dot-offline'}`} />
+                    <span className="sensor-name">{sensor.name}</span>
+                    <span className={`sensor-status ${online ? 'sensor-status-online' : 'sensor-status-offline'}`}>
+                      {online ? 'Online' : 'Offline'}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </section>
       </div>
 
