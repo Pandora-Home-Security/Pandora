@@ -1,16 +1,6 @@
 import { AppScreenLayout } from '../../components/AppScreenLayout';
 import { PlaceholderScreen } from '../../components/PlaceholderScreen';
 
-export const SensorsScreen = () => (
-  <AppScreenLayout title="Senzori">
-    <PlaceholderScreen
-      title="Senzori"
-      description="Pregled IoT senzora, podataka u stvarnom vremenu i upravljanje."
-      milestone="M5"
-    />
-  </AppScreenLayout>
-);
-
 export const AnalyticsScreen = () => (
   <AppScreenLayout title="Analitika">
     <PlaceholderScreen
