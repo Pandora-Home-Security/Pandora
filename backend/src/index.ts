@@ -134,6 +134,232 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', message: 'Backend radi' });
 });
 
+/* ===== Autentikacija IoT uređaja (Bearer DEVICE_API_KEY) ===== */
+
+type DeviceRow = {
+  id: string;
+  name: string;
+  type: string;
+  location: string;
+  api_key: string;
+  status: string;
+  last_seen: string | null;
+  created_at: string;
+};
+
+type DeviceAuthenticatedRequest = Request & {
+  device?: DeviceRow;
+};
+
+const authenticateDevice = async (
+  req: DeviceAuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Nedostaje Authorization token.' });
+  }
+
+  const apiKey = authHeader.slice('Bearer '.length).trim();
+  if (!apiKey) {
+    return res.status(401).json({ message: 'Prazan API ključ.' });
+  }
+
+  const result = await pool.query<DeviceRow>(
+    `SELECT id::text AS id, name, type, location, api_key, status,
+            last_seen::text, created_at::text
+     FROM devices WHERE api_key = $1`,
+    [apiKey],
+  );
+
+  const device = result.rows[0];
+  if (!device) {
+    return res.status(401).json({ message: 'Nepoznat uređaj.' });
+  }
+
+  if (device.status !== 'active') {
+    return res.status(403).json({ message: 'Uređaj je deaktiviran.' });
+  }
+
+  req.device = device;
+  next();
+};
+
+/* ===== POST /api/device-events — prijem događaja sa senzora ===== */
+
+const VALID_EVENT_TYPES = ['reading', 'alert', 'status_change', 'battery_low', 'offline', 'online'] as const;
+
+app.post('/api/device-events', authenticateDevice, async (req: DeviceAuthenticatedRequest, res) => {
+  const { event_type, payload } = req.body ?? {};
+
+  if (!event_type || typeof event_type !== 'string' || !VALID_EVENT_TYPES.includes(event_type as typeof VALID_EVENT_TYPES[number])) {
+    return res.status(400).json({
+      message: `event_type je obavezan i mora biti jedan od: ${VALID_EVENT_TYPES.join(', ')}`,
+    });
+  }
+
+  if (payload !== undefined && (typeof payload !== 'object' || payload === null || Array.isArray(payload))) {
+    return res.status(400).json({ message: 'payload mora biti objekt.' });
+  }
+
+  const eventResult = await pool.query(
+    `INSERT INTO device_events (device_id, event_type, payload)
+     VALUES ($1, $2, $3)
+     RETURNING id::text AS id, device_id::text AS device_id, event_type, payload, created_at`,
+    [req.device!.id, event_type, JSON.stringify(payload ?? {})],
+  );
+
+  await pool.query(
+    'UPDATE devices SET last_seen = NOW() WHERE id = $1',
+    [req.device!.id],
+  );
+
+  res.status(201).json({ event: eventResult.rows[0] });
+});
+
+/* ===== API za web aplikaciju — upravljanje senzorima ===== */
+
+app.get('/api/sensors', authenticateRequest, async (_req: AuthenticatedRequest, res) => {
+  const result = await pool.query(
+    `SELECT id::text AS id, name, type, location, status,
+            last_seen, created_at
+     FROM devices ORDER BY created_at DESC`,
+  );
+  res.json({ sensors: result.rows });
+});
+
+app.get('/api/sensors/:id', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const result = await pool.query(
+    `SELECT id::text AS id, name, type, location, status,
+            last_seen, created_at
+     FROM devices WHERE id = $1`,
+    [req.params.id],
+  );
+
+  if (result.rows.length === 0) {
+    return res.status(404).json({ message: 'Senzor nije pronađen.' });
+  }
+
+  res.json({ sensor: result.rows[0] });
+});
+
+app.get('/api/sensors/:id/events', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const deviceCheck = await pool.query('SELECT id FROM devices WHERE id = $1', [req.params.id]);
+  if (deviceCheck.rows.length === 0) {
+    return res.status(404).json({ message: 'Senzor nije pronađen.' });
+  }
+
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  const offset = Math.max(Number(req.query.offset) || 0, 0);
+
+  const result = await pool.query(
+    `SELECT id::text AS id, device_id::text AS device_id, event_type, payload, created_at
+     FROM device_events
+     WHERE device_id = $1
+     ORDER BY created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [req.params.id, limit, offset],
+  );
+
+  res.json({ events: result.rows });
+});
+
+app.post('/api/sensors', authenticateRequest, async (_req: AuthenticatedRequest, res) => {
+  const { name, type, location } = _req.body ?? {};
+
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    return res.status(400).json({ message: 'Naziv senzora je obavezan.' });
+  }
+
+  const validTypes = ['door', 'window', 'smoke', 'temperature', 'motion'];
+  if (!type || !validTypes.includes(type)) {
+    return res.status(400).json({ message: `Tip mora biti jedan od: ${validTypes.join(', ')}` });
+  }
+
+  if (!location || typeof location !== 'string' || !location.trim()) {
+    return res.status(400).json({ message: 'Lokacija je obavezna.' });
+  }
+
+  const apiKey = crypto.randomBytes(32).toString('hex');
+
+  const result = await pool.query(
+    `INSERT INTO devices (name, type, location, api_key)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id::text AS id, name, type, location, api_key, status, last_seen, created_at`,
+    [name.trim(), type, location.trim(), apiKey],
+  );
+
+  res.status(201).json({ message: 'Senzor uspješno dodan.', sensor: result.rows[0] });
+});
+
+app.put('/api/sensors/:id', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const { name, type, location, status } = req.body ?? {};
+
+  const existing = await pool.query('SELECT id FROM devices WHERE id = $1', [req.params.id]);
+  if (existing.rows.length === 0) {
+    return res.status(404).json({ message: 'Senzor nije pronađen.' });
+  }
+
+  const updates: string[] = [];
+  const values: (string | number)[] = [];
+  let paramIndex = 1;
+
+  if (name !== undefined) {
+    if (typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ message: 'Naziv ne može biti prazan.' });
+    }
+    updates.push(`name = $${paramIndex++}`);
+    values.push(name.trim());
+  }
+
+  if (type !== undefined) {
+    const validTypes = ['door', 'window', 'smoke', 'temperature', 'motion'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ message: `Tip mora biti jedan od: ${validTypes.join(', ')}` });
+    }
+    updates.push(`type = $${paramIndex++}`);
+    values.push(type);
+  }
+
+  if (location !== undefined) {
+    if (typeof location !== 'string' || !location.trim()) {
+      return res.status(400).json({ message: 'Lokacija ne može biti prazna.' });
+    }
+    updates.push(`location = $${paramIndex++}`);
+    values.push(location.trim());
+  }
+
+  if (status !== undefined) {
+    if (!['active', 'inactive'].includes(status)) {
+      return res.status(400).json({ message: 'Status mora biti active ili inactive.' });
+    }
+    updates.push(`status = $${paramIndex++}`);
+    values.push(status);
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ message: 'Nema polja za ažuriranje.' });
+  }
+
+  values.push(req.params.id);
+  const result = await pool.query(
+    `UPDATE devices SET ${updates.join(', ')} WHERE id = $${paramIndex}
+     RETURNING id::text AS id, name, type, location, status, last_seen, created_at`,
+    values,
+  );
+
+  res.json({ message: 'Senzor uspješno ažuriran.', sensor: result.rows[0] });
+});
+
+app.delete('/api/sensors/:id', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const result = await pool.query('DELETE FROM devices WHERE id = $1 RETURNING id', [req.params.id]);
+  if (result.rows.length === 0) {
+    return res.status(404).json({ message: 'Senzor nije pronađen.' });
+  }
+  res.json({ message: 'Senzor uspješno obrisan.' });
+});
+
 app.post('/api/auth/register', async (req, res) => {
   const { ime, email, password } = req.body ?? {};
 
