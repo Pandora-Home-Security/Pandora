@@ -527,6 +527,157 @@
   white-space: nowrap;
 }
 
+/* ===== Gumb za dodavanje ===== */
+.sensors-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: #0a0c10;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sensors-add-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* ===== Error poruka ===== */
+.sensors-error {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--error-bg);
+  border: 1px solid rgba(229, 77, 77, 0.15);
+  color: #ff8f8f;
+  font-size: 0.85rem;
+}
+
+/* ===== Spinner ===== */
+.sensors-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: sensor-spin 0.8s linear infinite;
+}
+
+@keyframes sensor-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Akcije na kartici ===== */
+.sensor-card-actions {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.sensor-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sensor-action-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sensor-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.sensor-action-btn-danger:hover {
+  background: rgba(229, 77, 77, 0.1);
+  color: #ff8f8f;
+}
+
+/* ===== Selektirani senzor ===== */
+.sensor-card-selected {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.sensor-card {
+  cursor: pointer;
+}
+
+/* ===== Sekcija s događajima ===== */
+.sensors-events-section {
+  margin-bottom: 2rem;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ===== Event tip badge ===== */
+.sensor-event-badge {
+  display: inline-block;
+  padding: 0.22rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sensor-event-reading       { background: rgba(96, 165, 250, 0.12); color: #60a5fa; }
+.sensor-event-alert         { background: rgba(251, 146, 60, 0.12); color: #fb923c; }
+.sensor-event-status_change { background: rgba(167, 139, 250, 0.12); color: #a78bfa; }
+.sensor-event-battery_low   { background: rgba(251, 191, 36, 0.12); color: #fbbf24; }
+.sensor-event-offline       { background: rgba(229, 77, 77, 0.12); color: #ff8f8f; }
+.sensor-event-online        { background: rgba(52, 211, 153, 0.12); color: #34d399; }
+
+/* ===== API key box ===== */
+.api-key-notice {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.api-key-notice code {
+  background: var(--bg-input);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.api-key-box {
+  padding: 0.75rem 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+}
+
+.api-key-box code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--accent);
+  word-break: break-all;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   .sensors-header {

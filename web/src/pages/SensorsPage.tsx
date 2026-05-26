@@ -1,21 +1,33 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { apiFetch } from '../lib/api';
+import SensorFormModal from '../components/SensorFormModal';
+import ConfirmModal from '../components/ConfirmModal';
 import './SensorsPage.css';
 
 /* ===== Tipovi ===== */
 type SensorType = 'door' | 'window' | 'smoke' | 'temperature' | 'motion';
-type SensorStatus = 'active' | 'inactive';
 
 type Sensor = {
   id: string;
   name: string;
   type: SensorType;
   location: string;
-  status: SensorStatus;
-  lastReading?: string;
+  status: 'active' | 'inactive';
+  api_key?: string;
+  last_seen: string | null;
+  created_at: string;
+};
+
+type DeviceEvent = {
+  id: string;
+  device_id: string;
+  event_type: string;
+  payload: Record<string, unknown>;
+  created_at: string;
 };
 
 type FilterType = 'all' | SensorType;
-type FilterStatus = 'all' | SensorStatus;
+type FilterStatus = 'all' | 'active' | 'inactive';
 
 /* ===== Pomoćne konstante ===== */
 const typeLabels: Record<SensorType, string> = {
@@ -24,6 +36,15 @@ const typeLabels: Record<SensorType, string> = {
   smoke:       'Dim',
   temperature: 'Temperatura',
   motion:      'Pokret',
+};
+
+const eventTypeLabels: Record<string, string> = {
+  reading:       'Očitanje',
+  alert:         'Upozorenje',
+  status_change: 'Promjena statusa',
+  battery_low:   'Slaba baterija',
+  offline:       'Offline',
+  online:        'Online',
 };
 
 /* ===== SVG ikone po tipu senzora ===== */
@@ -72,20 +93,6 @@ const SensorIcon = ({ type }: { type: SensorType }) => {
   }
 };
 
-/* ===== Mock podaci (zamijeniti API pozivom kad backend endpoint bude spreman) ===== */
-const mockSensors: Sensor[] = [
-  { id: '1', name: 'Senzor ulaznih vrata',       type: 'door',        location: 'Ulaz',            status: 'active',   lastReading: 'Zatvoreno' },
-  { id: '2', name: 'Senzor prozora dnevni',      type: 'window',      location: 'Dnevni boravak',  status: 'active',   lastReading: 'Zatvoreno' },
-  { id: '3', name: 'Detektor dima kuhinja',      type: 'smoke',       location: 'Kuhinja',         status: 'active',   lastReading: 'OK' },
-  { id: '4', name: 'Termometar spremište',       type: 'temperature', location: 'Spremište',       status: 'active',   lastReading: '22.4 °C' },
-  { id: '5', name: 'Senzor garažnih vrata',      type: 'door',        location: 'Garaža',          status: 'inactive', lastReading: '—' },
-  { id: '6', name: 'Senzor pokreta dvorište',    type: 'motion',      location: 'Dvorište',        status: 'inactive', lastReading: '—' },
-  { id: '7', name: 'Senzor prozora spavaća',     type: 'window',      location: 'Spavaća soba',    status: 'active',   lastReading: 'Zatvoreno' },
-  { id: '8', name: 'Detektor dima hodnik',       type: 'smoke',       location: 'Hodnik',          status: 'active',   lastReading: 'OK' },
-  { id: '9', name: 'Termometar dnevni boravak',  type: 'temperature', location: 'Dnevni boravak',  status: 'active',   lastReading: '23.1 °C' },
-  { id: '10', name: 'Senzor pokreta hodnik',     type: 'motion',      location: 'Hodnik',          status: 'active',   lastReading: 'Mirno' },
-];
-
 /* ===== Ikona lokacije (pin) ===== */
 const PinIcon = () => (
   <svg viewBox="0 0 20 20" fill="currentColor" className="sensor-meta-icon" aria-hidden="true">
@@ -95,22 +102,127 @@ const PinIcon = () => (
 
 /* ===== Komponenta ===== */
 function SensorsPage() {
+  const [sensors, setSensors] = useState<Sensor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editSensor, setEditSensor] = useState<Sensor | null>(null);
+  const [deleteSensor, setDeleteSensor] = useState<Sensor | null>(null);
+  const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
+
+  const [selectedSensorId, setSelectedSensorId] = useState<string | null>(null);
+  const [events, setEvents] = useState<DeviceEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+
+  const fetchSensors = useCallback(async () => {
+    try {
+      const res = await apiFetch('/api/sensors', { includeAuth: true });
+      if (!res.ok) throw new Error('Greška pri dohvatu senzora.');
+      const data = await res.json();
+      setSensors(data.sensors);
+    } catch {
+      setError('Nije moguće dohvatiti senzore.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchSensors(); }, [fetchSensors]);
+
+  const fetchEvents = useCallback(async (sensorId: string) => {
+    setEventsLoading(true);
+    try {
+      const res = await apiFetch(`/api/sensors/${sensorId}/events?limit=50`, { includeAuth: true });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setEvents(data.events);
+    } catch {
+      setEvents([]);
+    } finally {
+      setEventsLoading(false);
+    }
+  }, []);
+
+  const handleCardClick = (sensor: Sensor) => {
+    if (selectedSensorId === sensor.id) {
+      setSelectedSensorId(null);
+      setEvents([]);
+    } else {
+      setSelectedSensorId(sensor.id);
+      fetchEvents(sensor.id);
+    }
+  };
+
+  const handleCreate = async (data: { name: string; type: SensorType; location: string }) => {
+    const res = await apiFetch('/api/sensors', {
+      method: 'POST',
+      includeAuth: true,
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message);
+    setCreatedApiKey(json.sensor.api_key);
+    await fetchSensors();
+    setShowFormModal(false);
+  };
+
+  const handleEdit = async (data: { name: string; type: SensorType; location: string; status?: string }) => {
+    if (!editSensor) return;
+    const res = await apiFetch(`/api/sensors/${editSensor.id}`, {
+      method: 'PUT',
+      includeAuth: true,
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message);
+    await fetchSensors();
+    setEditSensor(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteSensor) return;
+    const res = await apiFetch(`/api/sensors/${deleteSensor.id}`, {
+      method: 'DELETE',
+      includeAuth: true,
+    });
+    if (!res.ok) {
+      const json = await res.json();
+      throw new Error(json.message);
+    }
+    if (selectedSensorId === deleteSensor.id) {
+      setSelectedSensorId(null);
+      setEvents([]);
+    }
+    await fetchSensors();
+    setDeleteSensor(null);
+  };
 
   /* Filtriranje */
   const filtered = useMemo(
     () =>
-      mockSensors.filter((s) => {
+      sensors.filter((s) => {
         if (filterType !== 'all' && s.type !== filterType) return false;
         if (filterStatus !== 'all' && s.status !== filterStatus) return false;
         return true;
       }),
-    [filterType, filterStatus],
+    [sensors, filterType, filterStatus],
   );
 
-  const activeCount = mockSensors.filter((s) => s.status === 'active').length;
-  const inactiveCount = mockSensors.length - activeCount;
+  const activeCount = sensors.filter((s) => s.status === 'active').length;
+  const inactiveCount = sensors.length - activeCount;
+
+  if (loading) {
+    return (
+      <div className="sensors-empty">
+        <div className="sensors-spinner" />
+        <p>Učitavanje senzora...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -118,12 +230,22 @@ function SensorsPage() {
       <div className="sensors-header">
         <div className="sensors-header-left">
           <h2 className="sensors-title">IoT senzori</h2>
-          <p className="sensors-subtitle">Pregled svih senzora u sustavu</p>
+          <p className="sensors-subtitle">Pregled i upravljanje senzorima u sustavu</p>
         </div>
         <div className="sensors-header-right">
+          <button
+            type="button"
+            className="sensors-add-btn"
+            onClick={() => setShowFormModal(true)}
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" style={{ width: 16, height: 16 }}>
+              <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+            </svg>
+            Dodaj senzor
+          </button>
           <div className="sensors-stat-card">
             <span className="sensors-stat-label">Ukupno</span>
-            <span className="sensors-stat-value">{mockSensors.length}</span>
+            <span className="sensors-stat-value">{sensors.length}</span>
           </div>
           <div className="sensors-stat-card sensors-stat-card-active">
             <span className="sensors-stat-dot" />
@@ -137,6 +259,8 @@ function SensorsPage() {
           </div>
         </div>
       </div>
+
+      {error && <p className="sensors-error">{error}</p>}
 
       {/* Filteri */}
       <div className="sensors-filters">
@@ -178,22 +302,40 @@ function SensorsPage() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="sensors-empty-icon">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z" />
           </svg>
-          <p>Nema senzora za prikaz s trenutnim filterima.</p>
+          <p>Nema senzora za prikaz.</p>
         </div>
       ) : (
         <>
           {/* Kartice */}
           <div className="sensors-grid">
             {filtered.map((sensor) => (
-              <article key={sensor.id} className={`sensor-card sensor-card-${sensor.status}`}>
+              <article
+                key={sensor.id}
+                className={`sensor-card sensor-card-${sensor.status} ${selectedSensorId === sensor.id ? 'sensor-card-selected' : ''}`}
+                onClick={() => handleCardClick(sensor)}
+              >
                 <div className="sensor-card-glow" aria-hidden="true" />
                 <div className="sensor-card-header">
                   <div className={`sensor-icon-wrap sensor-icon-${sensor.type}`} aria-hidden="true">
                     <SensorIcon type={sensor.type} />
                   </div>
-                  <div className={`sensor-status-pill sensor-status-pill-${sensor.status}`}>
-                    <span className="sensor-status-dot" />
-                    {sensor.status === 'active' ? 'Aktivan' : 'Neaktivan'}
+                  <div className="sensor-card-actions">
+                    <button
+                      type="button"
+                      className="sensor-action-btn"
+                      title="Uredi"
+                      onClick={(e) => { e.stopPropagation(); setEditSensor(sensor); }}
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" /></svg>
+                    </button>
+                    <button
+                      type="button"
+                      className="sensor-action-btn sensor-action-btn-danger"
+                      title="Obriši"
+                      onClick={(e) => { e.stopPropagation(); setDeleteSensor(sensor); }}
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 01.7.797l-.5 6a.75.75 0 01-1.497-.126l.5-6a.75.75 0 01.797-.67zm3.637.797a.75.75 0 10-1.497-.126l-.5 6a.75.75 0 101.497.126l.5-6z" clipRule="evenodd" /></svg>
+                    </button>
                   </div>
                 </div>
 
@@ -211,14 +353,71 @@ function SensorsPage() {
                 </div>
 
                 <div className="sensor-card-footer">
-                  <span className="sensor-reading-label">Zadnje očitanje</span>
-                  <span className="sensor-reading-value">{sensor.lastReading ?? '—'}</span>
+                  <div className={`sensor-status-pill sensor-status-pill-${sensor.status}`}>
+                    <span className="sensor-status-dot" />
+                    {sensor.status === 'active' ? 'Aktivan' : 'Neaktivan'}
+                  </div>
+                  <span className="sensor-reading-value">
+                    {sensor.last_seen
+                      ? new Date(sensor.last_seen).toLocaleString('hr-HR')
+                      : 'Nikad'}
+                  </span>
                 </div>
               </article>
             ))}
           </div>
 
-          {/* Tablica (alternativni prikaz za širi pregled) */}
+          {/* Panel s događajima odabranog senzora */}
+          {selectedSensorId && (
+            <div className="sensors-events-section">
+              <div className="sensors-table-heading">
+                <h3 className="sensors-table-title">
+                  Događaji — {sensors.find((s) => s.id === selectedSensorId)?.name}
+                </h3>
+                <span className="sensors-table-count">
+                  {events.length} {events.length === 1 ? 'događaj' : 'događaja'}
+                </span>
+              </div>
+              {eventsLoading ? (
+                <div className="sensors-empty"><div className="sensors-spinner" /><p>Učitavanje...</p></div>
+              ) : events.length === 0 ? (
+                <div className="sensors-empty"><p>Nema zabilježenih događaja za ovaj senzor.</p></div>
+              ) : (
+                <div className="sensors-table-wrapper">
+                  <table className="sensors-table">
+                    <thead>
+                      <tr>
+                        <th>Tip događaja</th>
+                        <th>Podaci</th>
+                        <th>Vrijeme</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {events.map((ev) => (
+                        <tr key={ev.id}>
+                          <td>
+                            <span className={`sensor-event-badge sensor-event-${ev.event_type}`}>
+                              {eventTypeLabels[ev.event_type] ?? ev.event_type}
+                            </span>
+                          </td>
+                          <td className="sensor-cell-reading">
+                            {Object.keys(ev.payload).length > 0
+                              ? JSON.stringify(ev.payload)
+                              : '—'}
+                          </td>
+                          <td className="sensor-cell-location">
+                            {new Date(ev.created_at).toLocaleString('hr-HR')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tablica svih senzora */}
           <div className="sensors-table-section">
             <div className="sensors-table-heading">
               <h3 className="sensors-table-title">Detaljan pregled</h3>
@@ -233,7 +432,7 @@ function SensorsPage() {
                     <th>Naziv</th>
                     <th>Tip</th>
                     <th>Lokacija</th>
-                    <th>Zadnje očitanje</th>
+                    <th>Zadnje viđen</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -254,7 +453,11 @@ function SensorsPage() {
                         </span>
                       </td>
                       <td className="sensor-cell-location">{sensor.location}</td>
-                      <td className="sensor-cell-reading">{sensor.lastReading ?? '—'}</td>
+                      <td className="sensor-cell-reading">
+                        {sensor.last_seen
+                          ? new Date(sensor.last_seen).toLocaleString('hr-HR')
+                          : '—'}
+                      </td>
                       <td>
                         <span className={`sensor-status-pill sensor-status-pill-${sensor.status}`}>
                           <span className="sensor-status-dot" />
@@ -268,6 +471,73 @@ function SensorsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Modali */}
+      <SensorFormModal
+        isOpen={showFormModal}
+        onClose={() => setShowFormModal(false)}
+        onSubmit={handleCreate}
+      />
+
+      <SensorFormModal
+        isOpen={!!editSensor}
+        onClose={() => setEditSensor(null)}
+        onSubmit={handleEdit}
+        initialData={editSensor ? { name: editSensor.name, type: editSensor.type, location: editSensor.location, status: editSensor.status } : null}
+        isEdit
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteSensor}
+        title="Obriši senzor"
+        message={`Jeste li sigurni da želite obrisati senzor "${deleteSensor?.name}"? Svi povezani događaji će također biti obrisani.`}
+        confirmText="Obriši"
+        danger
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteSensor(null)}
+      />
+
+      {/* Modal za prikaz API ključa nakon kreiranja */}
+      {createdApiKey && (
+        <div className="modal-backdrop" onClick={() => setCreatedApiKey(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Senzor uspješno dodan</h3>
+              <button type="button" className="modal-close-btn" onClick={() => setCreatedApiKey(null)} aria-label="Zatvori">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-form">
+              <p className="api-key-notice">
+                Spremite ovaj API ključ — prikazuje se samo jednom. Uređaj ga koristi za slanje događaja putem <code>Authorization: Bearer API_KEY</code>.
+              </p>
+              <div className="api-key-box">
+                <code>{createdApiKey}</code>
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="modal-btn modal-btn-submit"
+                  onClick={() => {
+                    navigator.clipboard.writeText(createdApiKey);
+                  }}
+                >
+                  Kopiraj ključ
+                </button>
+                <button
+                  type="button"
+                  className="modal-btn modal-btn-cancel"
+                  onClick={() => setCreatedApiKey(null)}
+                >
+                  Zatvori
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
