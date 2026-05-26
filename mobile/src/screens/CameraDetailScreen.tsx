@@ -14,6 +14,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Svg, { Path } from 'react-native-svg';
 import { AppScreenLayout } from '../components/AppScreenLayout';
+import { CameraFormModal, type CameraFormData } from '../components/CameraFormModal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
 import { colors, radius } from '../theme/colors';
@@ -59,6 +61,10 @@ export function CameraDetailScreen({ route }: Props) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+
+  // CRUD modali
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // Fetch kamera
   useEffect(() => {
@@ -125,6 +131,31 @@ export function CameraDetailScreen({ route }: Props) {
     else navigation.navigate('Cameras');
   }, [navigation]);
 
+  const handleEditSubmit = async (data: CameraFormData) => {
+    const res = await apiFetch(`/api/cameras/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      includeAuth: true,
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || 'Greška pri ažuriranju.');
+    setCamera(result.camera);
+    setIsFormOpen(false);
+  };
+
+  const handleDeleteConfirm = async () => {
+    const res = await apiFetch(`/api/cameras/${id}`, {
+      method: 'DELETE',
+      includeAuth: true,
+    });
+    if (!res.ok) {
+      const result = await res.json();
+      throw new Error(result.message || 'Greška pri brisanju.');
+    }
+    setIsDeleteOpen(false);
+    navigation.navigate('Cameras');
+  };
+
   if (loading) {
     return (
       <AppScreenLayout title="Kamera">
@@ -152,17 +183,54 @@ export function CameraDetailScreen({ route }: Props) {
   return (
     <AppScreenLayout title={camera.name}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {/* Back */}
-        <Pressable onPress={handleBack} hitSlop={8} style={styles.backBtn}>
-          <Svg viewBox="0 0 20 20" width={16} height={16} fill={colors.accent}>
-            <Path
-              fillRule="evenodd"
-              d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 011.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z"
-              clipRule="evenodd"
-            />
-          </Svg>
-          <Text style={styles.backText}>Natrag na kamere</Text>
-        </Pressable>
+        {/* Back + CRUD */}
+        <View style={styles.detailTopBar}>
+          <Pressable onPress={handleBack} hitSlop={8} style={styles.backBtn}>
+            <Svg viewBox="0 0 20 20" width={16} height={16} fill={colors.accent}>
+              <Path
+                fillRule="evenodd"
+                d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 011.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z"
+                clipRule="evenodd"
+              />
+            </Svg>
+            <Text style={styles.backText}>Natrag na kamere</Text>
+          </Pressable>
+
+          <View style={styles.crudActions}>
+            <Pressable
+              onPress={() => setIsFormOpen(true)}
+              style={({ pressed }) => [
+                styles.crudBtn,
+                styles.crudBtnEdit,
+                pressed && styles.crudBtnPressed,
+              ]}
+              hitSlop={4}
+            >
+              <Svg viewBox="0 0 20 20" width={14} height={14} fill={colors.textPrimary}>
+                <Path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+              </Svg>
+              <Text style={styles.crudBtnText}>Uredi</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setIsDeleteOpen(true)}
+              style={({ pressed }) => [
+                styles.crudBtn,
+                styles.crudBtnDelete,
+                pressed && styles.crudBtnPressed,
+              ]}
+              hitSlop={4}
+            >
+              <Svg viewBox="0 0 20 20" width={14} height={14} fill={colors.textPrimary}>
+                <Path
+                  fillRule="evenodd"
+                  d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
+                  clipRule="evenodd"
+                />
+              </Svg>
+              <Text style={styles.crudBtnText}>Obriši</Text>
+            </Pressable>
+          </View>
+        </View>
 
         {/* Player */}
         <VideoPlayer
@@ -192,9 +260,10 @@ export function CameraDetailScreen({ route }: Props) {
                 />
                 <Text
                   style={[
-                    styles.detailValue,
+                    styles.detailStatusText,
                     { color: camera.isOnline ? colors.success : colors.textMuted },
                   ]}
+                  numberOfLines={1}
                 >
                   {camera.isOnline ? 'Online' : 'Offline'}
                 </Text>
@@ -239,6 +308,25 @@ export function CameraDetailScreen({ route }: Props) {
           />
         </SafeAreaView>
       </Modal>
+
+      {/* CRUD modali */}
+      <CameraFormModal
+        visible={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleEditSubmit}
+        isEdit
+        initialData={{ name: camera.name, location: camera.location, streamUrl: '' }}
+      />
+
+      <ConfirmModal
+        visible={isDeleteOpen}
+        title="Obrisati kameru?"
+        message={`Jeste li sigurni da želite obrisati kameru "${camera.name}"? Ova akcija se ne može poništiti.`}
+        confirmText="Obriši"
+        danger
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setIsDeleteOpen(false)}
+      />
     </AppScreenLayout>
   );
 }
@@ -474,16 +562,49 @@ const styles = StyleSheet.create({
     ...typography.button,
     color: colors.bgDeep,
   },
+  detailTopBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    alignSelf: 'flex-start',
     paddingVertical: 4,
   },
   backText: {
     ...typography.link,
     color: colors.accent,
+  },
+  crudActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  crudBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.button,
+    borderWidth: 1,
+  },
+  crudBtnEdit: {
+    backgroundColor: colors.bgSurface,
+    borderColor: colors.borderSubtle,
+  },
+  crudBtnDelete: {
+    backgroundColor: colors.errorBg,
+    borderColor: colors.errorBorder,
+  },
+  crudBtnPressed: { opacity: 0.75 },
+  crudBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textPrimary,
   },
 
   // Player
@@ -685,6 +806,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flexShrink: 0,
+  },
+  detailStatusText: {
+    ...typography.formSubheader,
+    fontWeight: '500',
   },
   statusDot: {
     width: 8,

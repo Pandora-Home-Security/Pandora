@@ -11,6 +11,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { AppScreenLayout } from '../components/AppScreenLayout';
+import { CameraFormModal, type CameraFormData } from '../components/CameraFormModal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
 import { colors, radius } from '../theme/colors';
@@ -52,6 +54,11 @@ export function CamerasScreen() {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<FilterStatus>('all');
 
+  // CRUD modali
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingCamera, setEditingCamera] = useState<Camera | null>(null);
+  const [deletingCamera, setDeletingCamera] = useState<Camera | null>(null);
+
   const loadCameras = useCallback(
     async (isRefresh = false) => {
       if (!isRefresh) setLoading(true);
@@ -91,6 +98,54 @@ export function CamerasScreen() {
     void loadCameras(true);
   }, [loadCameras]);
 
+  const handleAdd = () => {
+    setEditingCamera(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEdit = (camera: Camera) => {
+    setEditingCamera(camera);
+    setIsFormOpen(true);
+  };
+
+  const handleFormSubmit = async (data: CameraFormData) => {
+    if (editingCamera) {
+      const res = await apiFetch(`/api/cameras/${editingCamera.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        includeAuth: true,
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || 'Greška pri ažuriranju.');
+    } else {
+      const res = await apiFetch('/api/cameras', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        includeAuth: true,
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || 'Greška pri dodavanju.');
+    }
+
+    setIsFormOpen(false);
+    setEditingCamera(null);
+    await loadCameras(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingCamera) return;
+    const res = await apiFetch(`/api/cameras/${deletingCamera.id}`, {
+      method: 'DELETE',
+      includeAuth: true,
+    });
+    if (!res.ok) {
+      const result = await res.json();
+      throw new Error(result.message || 'Greška pri brisanju.');
+    }
+    setDeletingCamera(null);
+    await loadCameras(true);
+  };
+
   const onlineCount = cameras.filter((c) => c.isOnline).length;
   const offlineCount = cameras.length - onlineCount;
 
@@ -119,6 +174,17 @@ export function CamerasScreen() {
           <Text style={styles.title}>Kamere</Text>
           <Text style={styles.subtitle}>Pregled svih kamera u sustavu</Text>
         </View>
+
+        {/* Dodaj kameru */}
+        <Pressable
+          onPress={handleAdd}
+          style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]}
+        >
+          <Svg viewBox="0 0 20 20" width={16} height={16} fill={colors.bgDeep}>
+            <Path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+          </Svg>
+          <Text style={styles.addBtnText}>Dodaj kameru</Text>
+        </Pressable>
 
         {/* Stats */}
         <View style={styles.stats}>
@@ -215,6 +281,39 @@ export function CamerasScreen() {
                       <Text style={styles.offlineText}>OFFLINE</Text>
                     </View>
                   )}
+
+                  {/* CRUD akcije na kartici */}
+                  <View style={styles.cardActions}>
+                    <Pressable
+                      onPress={() => handleEdit(camera)}
+                      hitSlop={6}
+                      style={({ pressed }) => [
+                        styles.cardActionBtn,
+                        pressed && styles.cardActionBtnPressed,
+                      ]}
+                    >
+                      <Svg viewBox="0 0 20 20" width={14} height={14} fill={colors.textPrimary}>
+                        <Path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                      </Svg>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setDeletingCamera(camera)}
+                      hitSlop={6}
+                      style={({ pressed }) => [
+                        styles.cardActionBtn,
+                        styles.cardActionBtnDelete,
+                        pressed && styles.cardActionBtnPressed,
+                      ]}
+                    >
+                      <Svg viewBox="0 0 20 20" width={14} height={14} fill={colors.textPrimary}>
+                        <Path
+                          fillRule="evenodd"
+                          d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
+                          clipRule="evenodd"
+                        />
+                      </Svg>
+                    </Pressable>
+                  </View>
                 </View>
 
                 {/* Info */}
@@ -260,6 +359,32 @@ export function CamerasScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Modali */}
+      <CameraFormModal
+        visible={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setEditingCamera(null);
+        }}
+        onSubmit={handleFormSubmit}
+        isEdit={!!editingCamera}
+        initialData={
+          editingCamera
+            ? { name: editingCamera.name, location: editingCamera.location, streamUrl: '' }
+            : null
+        }
+      />
+
+      <ConfirmModal
+        visible={!!deletingCamera}
+        title="Obrisati kameru?"
+        message={`Jeste li sigurni da želite obrisati kameru "${deletingCamera?.name ?? ''}"? Ova akcija se ne može poništiti.`}
+        confirmText="Obriši"
+        danger
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeletingCamera(null)}
+      />
     </AppScreenLayout>
   );
 }
@@ -352,6 +477,45 @@ const styles = StyleSheet.create({
   },
   statValueOnline: { color: colors.successText },
   statValueOffline: { color: colors.errorText },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: radius.button,
+    backgroundColor: colors.accent,
+  },
+  addBtnPressed: { opacity: 0.85 },
+  addBtnText: {
+    ...typography.button,
+    color: colors.bgDeep,
+  },
+  cardActions: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    gap: 6,
+  },
+  cardActionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+  },
+  cardActionBtnDelete: {
+    backgroundColor: 'rgba(229,77,77,0.65)',
+    borderColor: colors.errorBorder,
+  },
+  cardActionBtnPressed: {
+    opacity: 0.75,
+  },
   filters: {
     flexDirection: 'row',
     gap: 8,
