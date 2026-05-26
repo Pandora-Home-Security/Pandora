@@ -10,10 +10,16 @@ export type MockAlarm = {
   type: AlarmType;
 };
 
+export type SensorType = 'door' | 'window' | 'smoke' | 'temperature' | 'motion';
+export type SensorStatus = 'active' | 'inactive';
+
 export type MockSensor = {
   id: string;
   name: string;
-  status: 'active' | 'inactive';
+  type: SensorType;
+  location: string;
+  status: SensorStatus;
+  lastReading?: string;
 };
 
 export const mockAlarms: MockAlarm[] = [
@@ -24,13 +30,33 @@ export const mockAlarms: MockAlarm[] = [
   { id: '5', message: 'Gubitak veze - Senzor dvorište', time: 'Prije 3 sata', type: 'connection' },
 ];
 
+export const sensorTypeLabels: Record<SensorType, string> = {
+  door: 'Vrata',
+  window: 'Prozor',
+  smoke: 'Dim',
+  temperature: 'Temperatura',
+  motion: 'Pokret',
+};
+
+export const sensorTypeColors: Record<SensorType, string> = {
+  door: '#34d399',
+  window: '#60a5fa',
+  smoke: '#9ca3af',
+  temperature: '#fb923c',
+  motion: '#a78bfa',
+};
+
 export const mockSensors: MockSensor[] = [
-  { id: '1', name: 'Vrata - Ulaz', status: 'active' },
-  { id: '2', name: 'Prozor - Dnevni boravak', status: 'active' },
-  { id: '3', name: 'Temperatura - Spremište', status: 'active' },
-  { id: '4', name: 'Dim - Kuhinja', status: 'active' },
-  { id: '5', name: 'Vrata - Garaža', status: 'inactive' },
-  { id: '6', name: 'Pokret - Dvorište', status: 'inactive' },
+  { id: '1',  name: 'Senzor ulaznih vrata',      type: 'door',        location: 'Ulaz',           status: 'active',   lastReading: 'Zatvoreno' },
+  { id: '2',  name: 'Senzor prozora dnevni',      type: 'window',      location: 'Dnevni boravak', status: 'active',   lastReading: 'Zatvoreno' },
+  { id: '3',  name: 'Detektor dima kuhinja',      type: 'smoke',       location: 'Kuhinja',        status: 'active',   lastReading: 'OK' },
+  { id: '4',  name: 'Termometar spremiste',        type: 'temperature', location: 'Spremiste',      status: 'active',   lastReading: '22.4 °C' },
+  { id: '5',  name: 'Senzor garaznih vrata',       type: 'door',        location: 'Garaza',         status: 'inactive' },
+  { id: '6',  name: 'Senzor pokreta dvoriste',     type: 'motion',      location: 'Dvoriste',       status: 'inactive' },
+  { id: '7',  name: 'Senzor prozora spavaca',      type: 'window',      location: 'Spavaca soba',   status: 'active',   lastReading: 'Zatvoreno' },
+  { id: '8',  name: 'Detektor dima hodnik',        type: 'smoke',       location: 'Hodnik',         status: 'active',   lastReading: 'OK' },
+  { id: '9',  name: 'Termometar dnevni boravak',   type: 'temperature', location: 'Dnevni boravak', status: 'active',   lastReading: '23.1 °C' },
+  { id: '10', name: 'Senzor pokreta hodnik',       type: 'motion',      location: 'Hodnik',         status: 'active',   lastReading: 'Mirno' },
 ];
 
 export const alarmTypeBadge: Record<AlarmType, { label: string; color: string }> = {
