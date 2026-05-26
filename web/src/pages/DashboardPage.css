@@ -6,7 +6,7 @@
 /* ===== Stat kartice ===== */
 .stat-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -49,6 +49,11 @@
 .stat-icon-sensors {
   background: rgba(52, 211, 153, 0.12);
   color: #34d399;
+}
+
+.stat-icon-online {
+  background: rgba(96, 165, 250, 0.12);
+  color: #60a5fa;
 }
 
 .stat-icon-alarms {
@@ -246,13 +251,16 @@
   flex-shrink: 0;
 }
 
-.sensor-dot-active {
+.sensor-dot-active,
+.sensor-dot-online {
   background: #34d399;
   box-shadow: 0 0 6px rgba(52, 211, 153, 0.4);
 }
 
-.sensor-dot-inactive {
-  background: #6b7280;
+.sensor-dot-inactive,
+.sensor-dot-offline {
+  background: #f87171;
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.3);
 }
 
 .sensor-name {
@@ -265,12 +273,14 @@
   font-weight: 500;
 }
 
-.sensor-status-active {
+.sensor-status-active,
+.sensor-status-online {
   color: #34d399;
 }
 
-.sensor-status-inactive {
-  color: #6b7280;
+.sensor-status-inactive,
+.sensor-status-offline {
+  color: #f87171;
 }
 
 /* ===== Camera sekcija ===== */
@@ -337,7 +347,7 @@
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   .stat-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .dashboard-panels {

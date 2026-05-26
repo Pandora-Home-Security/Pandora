@@ -100,6 +100,24 @@
   color: #9ca3af;
 }
 
+.sensors-stat-card-online .sensors-stat-dot {
+  background: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+}
+
+.sensors-stat-card-online .sensors-stat-value {
+  color: #60a5fa;
+}
+
+.sensors-stat-card-offline .sensors-stat-dot {
+  background: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+}
+
+.sensors-stat-card-offline .sensors-stat-value {
+  color: #f87171;
+}
+
 /* ===== Filteri ===== */
 .sensors-filters {
   display: flex;
@@ -392,7 +410,7 @@
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.65rem 0.85rem;
@@ -400,6 +418,7 @@
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
+  flex-wrap: wrap;
 }
 
 .sensor-reading-label {
@@ -646,6 +665,71 @@
 .sensor-event-battery_low   { background: rgba(251, 191, 36, 0.12); color: #fbbf24; }
 .sensor-event-offline       { background: rgba(229, 77, 77, 0.12); color: #ff8f8f; }
 .sensor-event-online        { background: rgba(52, 211, 153, 0.12); color: #34d399; }
+
+/* ===== Connection pill (online/offline) ===== */
+.sensor-connection-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.sensor-connection-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.sensor-connection-online {
+  background: rgba(96, 165, 250, 0.1);
+  border-color: rgba(96, 165, 250, 0.25);
+  color: #60a5fa;
+}
+
+.sensor-connection-online .sensor-connection-dot {
+  background: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  animation: sensor-pulse-blue 2.4s ease-in-out infinite;
+}
+
+.sensor-connection-offline {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+}
+
+.sensor-connection-offline .sensor-connection-dot {
+  background: #f87171;
+}
+
+@keyframes sensor-pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2); }
+  50%      { box-shadow: 0 0 0 5px rgba(96, 165, 250, 0.05); }
+}
+
+/* ===== Poboljšani card footer ===== */
+.sensor-card-footer-left {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.sensor-card-footer-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.sensor-last-seen {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
 
 /* ===== API key box ===== */
 .api-key-notice {
