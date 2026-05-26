@@ -11,16 +11,6 @@ export const SensorsScreen = () => (
   </AppScreenLayout>
 );
 
-export const AlarmsScreen = () => (
-  <AppScreenLayout title="Alarmi">
-    <PlaceholderScreen
-      title="Alarmi"
-      description="Popis alarma, oznacavanje kao procitano i real-time push notifikacije."
-      milestone="M4"
-    />
-  </AppScreenLayout>
-);
-
 export const AnalyticsScreen = () => (
   <AppScreenLayout title="Analitika">
     <PlaceholderScreen
