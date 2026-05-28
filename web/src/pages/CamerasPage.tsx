@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import './CamerasPage.css';
 import { apiFetch } from '../lib/api';
 import { clearAuthToken } from '../lib/auth';
+import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
 import CameraFormModal from '../components/CameraFormModal';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -210,34 +211,21 @@ function CamerasPage() {
         </button>
       </div>
 
-      {/* Error poruka */}
-      {error && (
-        <div className="cameras-error">
-          <p>{error}</p>
-        </div>
-      )}
-
-      {/* Loading */}
-      {isLoading && (
-        <div className="cameras-loading">
-          <div className="cameras-loading-spinner" />
-          <p>Ucitavanje kamera...</p>
-        </div>
-      )}
-
-      {/* Grid kamera */}
-      {!isLoading && !error && (
-        <>
-          {filteredCameras.length === 0 ? (
-            <div className="cameras-empty">
-              <span className="cameras-empty-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
-                </svg>
-              </span>
-              <p>Nema kamera za prikaz s trenutnim filterom.</p>
-            </div>
-          ) : (
+      {/* Stanja: učitavanje / greška / prazno / grid */}
+      {isLoading ? (
+        <LoadingState message="Učitavanje kamera..." />
+      ) : error ? (
+        <ErrorState message={error} onRetry={() => void loadCameras()} />
+      ) : filteredCameras.length === 0 ? (
+        <EmptyState
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+          }
+          message={cameras.length === 0 ? 'Još nema dodanih kamera.' : 'Nema kamera za prikaz s trenutnim filterom.'}
+        />
+      ) : (
             <div className="cameras-grid">
               {filteredCameras.map((camera) => (
                 <Link
@@ -304,8 +292,6 @@ function CamerasPage() {
                 </Link>
               ))}
             </div>
-          )}
-        </>
       )}
 
       {/* Modal za dodaj/uredi */}

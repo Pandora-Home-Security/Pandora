@@ -81,21 +81,6 @@
   font-weight: 400;
 }
 
-/* ===== Status poruka ===== */
-.dashboard-status {
-  margin-bottom: 1.5rem;
-}
-
-.dashboard-status-error {
-  margin: 0;
-  padding: 0.85rem 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--error-bg);
-  border: 1px solid rgba(229, 77, 77, 0.15);
-  color: #ff8f8f;
-  font-size: 0.9rem;
-}
-
 /* ===== Dva stupca: Alarmi + Senzori ===== */
 .dashboard-panels {
   display: grid;
