@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './DashboardPage.css';
 import { apiFetch } from '../lib/api';
 import { clearAuthToken } from '../lib/auth';
+import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
 
 /* ===== Tipovi ===== */
 type Camera = {
@@ -59,51 +60,62 @@ function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      setError('');
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    setError('');
 
-      try {
-        const [camRes, senRes] = await Promise.all([
-          apiFetch('/api/cameras', { includeAuth: true }),
-          apiFetch('/api/sensors', { includeAuth: true }),
-        ]);
+    try {
+      const [camRes, senRes] = await Promise.all([
+        apiFetch('/api/cameras', { includeAuth: true }),
+        apiFetch('/api/sensors', { includeAuth: true }),
+      ]);
 
-        if (camRes.status === 401 || senRes.status === 401) {
-          clearAuthToken();
-          navigate('/login', { replace: true });
-          return;
-        }
-
-        if (camRes.ok) {
-          const camData = await camRes.json();
-          setCameras(camData.cameras ?? []);
-        }
-
-        if (senRes.ok) {
-          const senData = await senRes.json();
-          setSensors(senData.sensors ?? []);
-        }
-
-        if (!camRes.ok && !senRes.ok) {
-          setError('Greška pri dohvaćanju podataka.');
-        }
-      } catch {
-        setError('Greška pri dohvaćanju podataka.');
-      } finally {
-        setIsLoading(false);
+      if (camRes.status === 401 || senRes.status === 401) {
+        clearAuthToken();
+        navigate('/login', { replace: true });
+        return;
       }
-    };
 
-    void loadData();
+      if (camRes.ok) {
+        const camData = await camRes.json();
+        setCameras(camData.cameras ?? []);
+      }
+
+      if (senRes.ok) {
+        const senData = await senRes.json();
+        setSensors(senData.sensors ?? []);
+      }
+
+      // Bilo koji neuspješan dohvat tretiramo kao grešku — da se kvar API-ja
+      // ne prikaže kao prazno stanje ("Nema podataka").
+      if (!camRes.ok || !senRes.ok) {
+        setError('Greška pri dohvaćanju podataka.');
+      }
+    } catch {
+      setError('Greška pri dohvaćanju podataka.');
+    } finally {
+      setIsLoading(false);
+    }
   }, [navigate]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   /* Izračunate vrijednosti za stat kartice */
   const activeCameras = cameras.filter((c) => c.isOnline).length;
   const activeSensors = sensors.filter((s) => s.status === 'active').length;
   const onlineSensors = sensors.filter((s) => isSensorOnline(s.last_seen)).length;
   const unreadAlarms = mockAlarms.length;
+
+  // Stanja: spinner dok se učitava, greška s gumbom za ponovni pokušaj ako neki dohvat padne
+  if (isLoading) {
+    return <LoadingState message="Učitavanje nadzorne ploče..." />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={() => void loadData()} />;
+  }
 
   return (
     <>
@@ -112,27 +124,21 @@ function DashboardPage() {
         <div className="stat-card">
           <div className="stat-icon stat-icon-cameras">CAM</div>
           <div className="stat-info">
-            <span className="stat-value">
-              {isLoading ? '...' : `${activeCameras}/${cameras.length}`}
-            </span>
+            <span className="stat-value">{activeCameras}/{cameras.length}</span>
             <span className="stat-label">Aktivne kamere</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon stat-icon-sensors">IOT</div>
           <div className="stat-info">
-            <span className="stat-value">
-              {isLoading ? '...' : `${activeSensors}/${sensors.length}`}
-            </span>
+            <span className="stat-value">{activeSensors}/{sensors.length}</span>
             <span className="stat-label">Aktivni senzori</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon stat-icon-online">NET</div>
           <div className="stat-info">
-            <span className="stat-value">
-              {isLoading ? '...' : `${onlineSensors}/${sensors.length}`}
-            </span>
+            <span className="stat-value">{onlineSensors}/{sensors.length}</span>
             <span className="stat-label">Online senzori</span>
           </div>
         </div>
@@ -144,13 +150,6 @@ function DashboardPage() {
           </div>
         </div>
       </div>
-
-      {/* Status poruka za API konekciju */}
-      {error && (
-        <div className="dashboard-status">
-          <p className="dashboard-status-error">{error}</p>
-        </div>
-      )}
 
       {/* Dva stupca: Alarmi + Senzori */}
       <div className="dashboard-panels">
@@ -180,8 +179,8 @@ function DashboardPage() {
             <span className="sensor-summary-divider">|</span>
             <span className="sensor-summary-inactive">Offline: {sensors.length - onlineSensors}</span>
           </div>
-          {isLoading ? (
-            <p className="loading-text">Učitavanje senzora...</p>
+          {sensors.length === 0 ? (
+            <p className="loading-text">Nema senzora za prikaz.</p>
           ) : (
             <ul className="sensor-list">
               {sensors.map((sensor) => {
@@ -204,8 +203,16 @@ function DashboardPage() {
       {/* Grid kamera */}
       <section className="panel-cameras">
         <h3 className="panel-title">Kamere</h3>
-        {isLoading && <p className="loading-text">Učitavanje kamera...</p>}
-        {!isLoading && !error && (
+        {cameras.length === 0 ? (
+          <EmptyState
+            icon={
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+              </svg>
+            }
+            message="Nema kamera za prikaz."
+          />
+        ) : (
           <div className="dashboard-grid">
             {cameras.map((camera) => (
               <div className="dashboard-card" key={camera.id}>

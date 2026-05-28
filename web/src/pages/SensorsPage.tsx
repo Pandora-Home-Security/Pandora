@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
+import { clearAuthToken } from '../lib/auth';
+import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
 import SensorFormModal from '../components/SensorFormModal';
 import ConfirmModal from '../components/ConfirmModal';
 import './SensorsPage.css';
@@ -139,6 +142,7 @@ function relativeTime(dateStr: string): string {
 
 /* ===== Komponenta ===== */
 function SensorsPage() {
+  const navigate = useNavigate();
   const [sensors, setSensors] = useState<Sensor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -155,31 +159,41 @@ function SensorsPage() {
   const [selectedSensorId, setSelectedSensorId] = useState<string | null>(null);
   const [events, setEvents] = useState<DeviceEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState(false);
 
   const fetchSensors = useCallback(async () => {
+    setLoading(true);
+    setError('');
     try {
       const res = await apiFetch('/api/sensors', { includeAuth: true });
+      if (res.status === 401) {
+        clearAuthToken();
+        navigate('/login', { replace: true });
+        return;
+      }
       if (!res.ok) throw new Error('Greška pri dohvatu senzora.');
       const data = await res.json();
-      setSensors(data.sensors);
+      setSensors(data.sensors ?? []);
     } catch {
       setError('Nije moguće dohvatiti senzore.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => { fetchSensors(); }, [fetchSensors]);
 
   const fetchEvents = useCallback(async (sensorId: string) => {
     setEventsLoading(true);
+    setEventsError(false);
     try {
       const res = await apiFetch(`/api/sensors/${sensorId}/events?limit=50`, { includeAuth: true });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      setEvents(data.events);
+      setEvents(data.events ?? []);
     } catch {
       setEvents([]);
+      setEventsError(true);
     } finally {
       setEventsLoading(false);
     }
@@ -260,15 +274,6 @@ function SensorsPage() {
   const onlineCount = sensors.filter((s) => isOnline(s.last_seen)).length;
   const offlineCount = sensors.length - onlineCount;
 
-  if (loading) {
-    return (
-      <div className="sensors-empty">
-        <div className="sensors-spinner" />
-        <p>Učitavanje senzora...</p>
-      </div>
-    );
-  }
-
   return (
     <>
       {/* Zaglavlje */}
@@ -314,8 +319,6 @@ function SensorsPage() {
           </div>
         </div>
       </div>
-
-      {error && <p className="sensors-error">{error}</p>}
 
       {/* Filteri */}
       <div className="sensors-filters">
@@ -366,14 +369,20 @@ function SensorsPage() {
         </div>
       </div>
 
-      {/* Prikaz senzora */}
-      {filtered.length === 0 ? (
-        <div className="sensors-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="sensors-empty-icon">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z" />
-          </svg>
-          <p>Nema senzora za prikaz.</p>
-        </div>
+      {/* Prikaz senzora — stanja: učitavanje / greška / prazno / sadržaj */}
+      {loading ? (
+        <LoadingState message="Učitavanje senzora..." />
+      ) : error ? (
+        <ErrorState message={error} onRetry={() => void fetchSensors()} />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z" />
+            </svg>
+          }
+          message={sensors.length === 0 ? 'Još nema dodanih senzora.' : 'Nema senzora za prikaz s trenutnim filterima.'}
+        />
       ) : (
         <>
           {/* Kartice */}
@@ -460,9 +469,14 @@ function SensorsPage() {
                 </span>
               </div>
               {eventsLoading ? (
-                <div className="sensors-empty"><div className="sensors-spinner" /><p>Učitavanje...</p></div>
+                <LoadingState message="Učitavanje događaja..." />
+              ) : eventsError ? (
+                <ErrorState
+                  message="Greška pri dohvaćanju događaja."
+                  onRetry={() => { if (selectedSensorId) void fetchEvents(selectedSensorId); }}
+                />
               ) : events.length === 0 ? (
-                <div className="sensors-empty"><p>Nema zabilježenih događaja za ovaj senzor.</p></div>
+                <EmptyState message="Nema zabilježenih događaja za ovaj senzor." />
               ) : (
                 <div className="sensors-table-wrapper">
                   <table className="sensors-table">

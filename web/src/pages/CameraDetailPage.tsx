@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import './CameraDetailPage.css';
 import { apiFetch } from '../lib/api';
 import { clearAuthToken } from '../lib/auth';
+import { LoadingState, ErrorState } from '../components/DataStates';
 import CameraFormModal from '../components/CameraFormModal';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -24,6 +25,7 @@ function CameraDetailPage() {
   const [camera, setCamera] = useState<Camera | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [notFound, setNotFound] = useState(false);
 
   /* CRUD modali */
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -37,44 +39,55 @@ function CameraDetailPage() {
   const [currentTime, setCurrentTime] = useState('00:00:00');
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* Dohvati podatke o kameri */
-  useEffect(() => {
-    const loadCamera = async () => {
-      setIsLoading(true);
-      setError('');
+  /* Dohvati podatke o kameri (uz zaštitu od zastarjelog odgovora pri brzoj promjeni id-a) */
+  const zahtjevIdRef = useRef(0);
+  const loadCamera = useCallback(async () => {
+    const zahtjevId = ++zahtjevIdRef.current;
+    setIsLoading(true);
+    setError('');
+    setNotFound(false);
 
-      try {
-const response = await apiFetch(`/api/cameras/${id}`, {
-          includeAuth: true,
-        });
-        const data = await response.json();
+    try {
+      const response = await apiFetch(`/api/cameras/${id}`, {
+        includeAuth: true,
+      });
+      const data = await response.json();
 
-        if (response.status === 401) {
-          clearAuthToken();
-          navigate('/login', { replace: true });
-          return;
-        }
+      // Ignoriraj odgovor ako je u međuvremenu krenuo noviji zahtjev
+      if (zahtjevId !== zahtjevIdRef.current) return;
 
-        if (response.status === 404) {
-          setError('Kamera nije pronađena.');
-          return;
-        }
+      if (response.status === 401) {
+        clearAuthToken();
+        navigate('/login', { replace: true });
+        return;
+      }
 
-        if (!response.ok) {
-          setError(data.message || 'Neuspješno dohvaćanje podataka o kameri.');
-          return;
-        }
+      if (response.status === 404) {
+        setNotFound(true);
+        setError('Kamera nije pronađena.');
+        return;
+      }
 
-        setCamera(data.camera ?? null);
-      } catch {
+      if (!response.ok) {
+        setError(data.message || 'Neuspješno dohvaćanje podataka o kameri.');
+        return;
+      }
+
+      setCamera(data.camera ?? null);
+    } catch {
+      if (zahtjevId === zahtjevIdRef.current) {
         setError('Greška pri dohvaćanju podataka o kameri.');
-      } finally {
+      }
+    } finally {
+      if (zahtjevId === zahtjevIdRef.current) {
         setIsLoading(false);
       }
-    };
-
-    void loadCamera();
+    }
   }, [id, navigate]);
+
+  useEffect(() => {
+    void loadCamera();
+  }, [loadCamera]);
 
   /* Sat za simulaciju live streama */
   useEffect(() => {
@@ -205,22 +218,16 @@ const response = await apiFetch(`/api/cameras/${id}`, {
         )}
       </div>
 
-      {/* Loading */}
-      {isLoading && (
-        <div className="camera-detail-loading">
-          <div className="camera-detail-spinner" />
-          <p>Učitavanje kamere...</p>
-        </div>
-      )}
+      {/* Učitavanje */}
+      {isLoading && <LoadingState message="Učitavanje kamere..." />}
 
-      {/* Error */}
+      {/* Greška (404 nema retry — samo povratak na popis) */}
       {error && (
-        <div className="camera-detail-error">
-          <p>{error}</p>
+        <ErrorState message={error} onRetry={notFound ? undefined : () => void loadCamera()}>
           <Link to="/kamere" className="camera-detail-back-btn">
             Povratak na popis kamera
           </Link>
-        </div>
+        </ErrorState>
       )}
 
       {/* Sadržaj */}

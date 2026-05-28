@@ -24,6 +24,7 @@ type NotificationsContextValue = {
   alarms: Alarm[];
   unreadCount: number;
   isLoading: boolean;
+  error: boolean;
   toasts: Toast[];
   dismissToast: (toastId: string) => void;
   markAsRead: (alarmId: string) => Promise<void>;
@@ -76,6 +77,7 @@ function playBeep(isCritical: boolean) {
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   // ID-jevi alarma koje smo već vidjeli (pratimo kad stigne nova)
@@ -88,7 +90,10 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await apiFetch('/api/alarms', { includeAuth: true });
-      if (!response.ok) return;
+      if (!response.ok) {
+        setError(true);
+        return;
+      }
 
       const data = await response.json();
       const fetched: Alarm[] = data.alarms ?? [];
@@ -113,10 +118,11 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       // Ažuriraj praćenje seen ID-jeva
       fetched.forEach((a) => seenIdsRef.current.add(a.id));
 
+      setError(false);
       setAlarms(fetched);
       isFirstLoadRef.current = false;
     } catch {
-      /* ignoriraj greške pollinga */
+      setError(true);
     } finally {
       setIsLoading(false);
     }
@@ -163,6 +169,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         alarms,
         unreadCount,
         isLoading,
+        error,
         toasts,
         dismissToast,
         markAsRead,
