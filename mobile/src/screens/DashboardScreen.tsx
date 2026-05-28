@@ -16,9 +16,9 @@ import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
 import {
   mockAlarms,
-  mockSensors,
   alarmTypeBadge,
 } from '../data/mockData';
+import { isOnline as sensorIsOnline } from './SensorsScreen';
 import type { RootStackNavigation } from '../navigation/RootStack';
 
 type Camera = {
@@ -28,32 +28,48 @@ type Camera = {
   isOnline: boolean;
 };
 
+type DashboardSensor = {
+  id: string;
+  name: string;
+  status: 'active' | 'inactive';
+  last_seen: string | null;
+};
+
 export function DashboardScreen() {
   const rootNav = useNavigation<RootStackNavigation>();
   const [cameras, setCameras] = useState<Camera[]>([]);
+  const [sensors, setSensors] = useState<DashboardSensor[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  const loadCameras = useCallback(async (isRefresh = false) => {
+  const loadData = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
     setError('');
 
     try {
-      const response = await apiFetch('/api/cameras', { includeAuth: true });
+      const [camRes, senRes] = await Promise.all([
+        apiFetch('/api/cameras', { includeAuth: true }),
+        apiFetch('/api/sensors', { includeAuth: true }),
+      ]);
 
-      if (response.status === 401) {
+      if (camRes.status === 401 || senRes.status === 401) {
         clearAuthSession();
         rootNav.reset({ index: 0, routes: [{ name: 'Login' }] });
         return;
       }
 
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.message || 'Neuspješno dohvaćanje kamera.');
+      const camData = await camRes.json();
+      if (!camRes.ok) {
+        setError(camData.message || 'Neuspješno dohvaćanje kamera.');
         return;
       }
-      setCameras(data.cameras ?? []);
+      setCameras(camData.cameras ?? []);
+
+      if (senRes.ok) {
+        const senData = await senRes.json();
+        setSensors(senData.sensors ?? []);
+      }
     } catch {
       setError('Greška pri dohvaćanju zaštićenih podataka.');
     } finally {
@@ -63,17 +79,17 @@ export function DashboardScreen() {
   }, [rootNav]);
 
   useEffect(() => {
-    void loadCameras();
-  }, [loadCameras]);
+    void loadData();
+  }, [loadData]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    void loadCameras(true);
-  }, [loadCameras]);
+    void loadData(true);
+  }, [loadData]);
 
   const activeCameras = cameras.filter((c) => c.isOnline).length;
-  const activeSensors = mockSensors.filter((s) => s.status === 'active').length;
-  const inactiveSensors = mockSensors.length - activeSensors;
+  const activeSensors = sensors.filter((s) => s.status === 'active').length;
+  const inactiveSensors = sensors.length - activeSensors;
   const unreadAlarms = mockAlarms.length;
   const lastFiveAlarms = mockAlarms.slice(0, 5);
 
@@ -101,7 +117,7 @@ export function DashboardScreen() {
         <StatCard
           variant="sensors"
           label="Aktivni senzori"
-          value={`${activeSensors}/${mockSensors.length}`}
+          value={`${activeSensors}/${sensors.length}`}
         />
         <StatCard
           variant="alarms"
@@ -151,32 +167,46 @@ export function DashboardScreen() {
             Neaktivni: {inactiveSensors}
           </Text>
         </View>
-        {mockSensors.map((sensor) => (
-          <View key={sensor.id} style={styles.sensorItem}>
-            <View
-              style={[
-                styles.sensorDot,
-                {
-                  backgroundColor:
-                    sensor.status === 'active' ? colors.success : colors.textMuted,
-                },
-              ]}
-            />
-            <Text style={styles.sensorName} numberOfLines={1}>
-              {sensor.name}
-            </Text>
-            <Text
-              style={[
-                styles.sensorStatus,
-                {
-                  color: sensor.status === 'active' ? colors.success : colors.textMuted,
-                },
-              ]}
-            >
-              {sensor.status === 'active' ? 'Aktivan' : 'Neaktivan'}
-            </Text>
-          </View>
-        ))}
+        {sensors.length === 0 && !loading && (
+          <Text style={styles.emptyText}>Nema senzora za prikaz.</Text>
+        )}
+        {sensors.map((sensor) => {
+          const online = sensorIsOnline(sensor.last_seen);
+          const isActive = sensor.status === 'active';
+          return (
+            <View key={sensor.id} style={styles.sensorItem}>
+              <View
+                style={[
+                  styles.sensorDot,
+                  {
+                    backgroundColor: isActive
+                      ? online
+                        ? colors.success
+                        : colors.error
+                      : colors.textMuted,
+                  },
+                ]}
+              />
+              <Text style={styles.sensorName} numberOfLines={1}>
+                {sensor.name}
+              </Text>
+              <Text
+                style={[
+                  styles.sensorStatus,
+                  {
+                    color: isActive
+                      ? online
+                        ? colors.success
+                        : colors.error
+                      : colors.textMuted,
+                  },
+                ]}
+              >
+                {isActive ? (online ? 'Online' : 'Offline') : 'Neaktivan'}
+              </Text>
+            </View>
+          );
+        })}
       </View>
 
       {/* Kamere — grid (1 stupac na mobile, prirodno) */}
