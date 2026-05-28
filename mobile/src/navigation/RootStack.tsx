@@ -7,6 +7,7 @@ import { CamerasScreen } from '../screens/CamerasScreen';
 import { CameraDetailScreen } from '../screens/CameraDetailScreen';
 import { AlarmsScreen } from '../screens/AlarmsScreen';
 import { SensorsScreen } from '../screens/SensorsScreen';
+import { SensorDetailScreen } from '../screens/SensorDetailScreen';
 import {
   AnalyticsScreen,
   UsersScreen,
@@ -20,6 +21,7 @@ export type RootStackParamList = {
   Cameras: undefined;
   CameraDetail: { id: string };
   Sensors: undefined;
+  SensorDetail: { id: string };
   Alarms: undefined;
   Analytics: undefined;
   Users: undefined;
@@ -46,6 +48,7 @@ export function RootStack() {
       <Stack.Screen name="Cameras" component={CamerasScreen} />
       <Stack.Screen name="CameraDetail" component={CameraDetailScreen} />
       <Stack.Screen name="Sensors" component={SensorsScreen} />
+      <Stack.Screen name="SensorDetail" component={SensorDetailScreen} />
       <Stack.Screen name="Alarms" component={AlarmsScreen} />
       <Stack.Screen name="Analytics" component={AnalyticsScreen} />
       <Stack.Screen name="Users" component={UsersScreen} />
