@@ -5,6 +5,7 @@
 
 .account-page {
   max-width: 960px;
+  min-width: 0;
 }
 
 /* ===== Header ===== */
@@ -13,6 +14,7 @@
   align-items: center;
   gap: 1.2rem;
   margin-bottom: 2rem;
+  min-width: 0;
 }
 
 .account-avatar {
@@ -57,6 +59,36 @@
 @media (max-width: 700px) {
   .account-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .account-header {
+    align-items: flex-start;
+  }
+
+  .account-avatar {
+    width: 46px;
+    height: 46px;
+  }
+
+  .account-title {
+    font-size: 1.3rem;
+  }
+
+  .account-card {
+    padding: 1.1rem;
+  }
+
+  .current-field {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .current-value {
+    max-width: 100%;
+    text-align: left;
   }
 }
 

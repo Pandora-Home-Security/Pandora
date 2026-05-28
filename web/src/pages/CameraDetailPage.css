@@ -10,6 +10,7 @@
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  min-width: 0;
 }
 
 /* ===== Breadcrumb ===== */
@@ -17,6 +18,7 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 /* ===== CRUD gumbi ===== */
@@ -84,6 +86,10 @@
   color: var(--text-primary);
   font-size: 0.88rem;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .breadcrumb-separator {
@@ -536,6 +542,7 @@
   padding: 0.55rem 0.7rem;
   border-radius: var(--radius-sm);
   background: var(--bg-input);
+  gap: 1rem;
 }
 
 .camera-detail-label {
@@ -548,6 +555,9 @@
   font-size: 0.85rem;
   color: var(--text-primary);
   font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .camera-detail-mono {
@@ -631,6 +641,11 @@
   .camera-detail-panels {
     grid-template-columns: 1fr;
   }
+
+  .camera-detail-top-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 640px) {
@@ -665,5 +680,32 @@
   .video-control-btn svg {
     width: 16px;
     height: 16px;
+  }
+
+  .camera-detail-crud-actions {
+    width: 100%;
+  }
+
+  .crud-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .breadcrumb-current {
+    display: none;
+  }
+
+  .camera-detail-panel {
+    padding: 1rem;
+  }
+
+  .camera-detail-field {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .camera-detail-value {
+    text-align: left;
   }
 }

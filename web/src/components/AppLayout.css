@@ -11,11 +11,13 @@
   background: var(--bg-deep);
   font-family: 'Outfit', sans-serif;
   color: var(--text-primary);
+  min-width: 0;
 }
 
 /* ===== Sidebar ===== */
 .sidebar {
   width: 250px;
+  max-width: calc(100vw - 56px);
   flex-shrink: 0;
   background: var(--bg-surface);
   border-right: 1px solid var(--border-subtle);
@@ -149,6 +151,7 @@
   flex-direction: column;
   min-height: 100vh;
   margin-left: 250px;
+  min-width: 0;
 }
 
 /* ===== Header ===== */
@@ -162,6 +165,7 @@
   position: sticky;
   top: 0;
   z-index: 50;
+  min-width: 0;
 }
 
 .header-spacer {
@@ -281,6 +285,7 @@
 .app-main {
   flex: 1;
   padding: 2rem 1.8rem;
+  min-width: 0;
 }
 
 /* ===== Backdrop (mobilni) ===== */
@@ -289,7 +294,7 @@
 }
 
 /* ===== Responsive: tablet i mobilni ===== */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   /* Sidebar skriveno po defaultu */
   .sidebar {
     transform: translateX(-100%);
@@ -331,6 +336,25 @@
 
   /* Sakrij greeting tekst na mobilnom da bude uredniji */
   .header-greeting {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-header {
+    gap: 0.6rem;
+    padding: 0.7rem 0.85rem;
+  }
+
+  .app-main {
+    padding: 1rem 0.85rem 1.25rem;
+  }
+
+  .app-header .logout-btn {
+    padding: 0.5rem;
+  }
+
+  .app-header .logout-btn span {
     display: none;
   }
 }

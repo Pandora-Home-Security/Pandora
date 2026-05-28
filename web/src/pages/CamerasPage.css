@@ -10,12 +10,14 @@
   justify-content: space-between;
   margin-bottom: 1.5rem;
   gap: 1rem;
+  min-width: 0;
 }
 
 .cameras-header-left {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .cameras-title {
@@ -36,12 +38,14 @@
   align-items: center;
   gap: 1rem;
   flex-shrink: 0;
+  min-width: 0;
 }
 
 .cameras-stats {
   display: flex;
   gap: 0.75rem;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 /* ===== Gumb Dodaj ===== */
@@ -98,6 +102,7 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .filter-btn {
@@ -203,7 +208,7 @@
 /* ===== Grid kamera ===== */
 .cameras-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 1.2rem;
 }
 
@@ -345,6 +350,10 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .camera-status-dot {
@@ -394,10 +403,11 @@
   .cameras-header-right {
     flex-direction: column;
     align-items: flex-start;
+    width: 100%;
   }
 
   .cameras-stats {
-    flex-wrap: wrap;
+    width: 100%;
   }
 
   /* Na touchscreenu akcije uvijek vidljive */
@@ -411,10 +421,6 @@
     grid-template-columns: 1fr;
   }
 
-  .cameras-filters {
-    flex-wrap: wrap;
-  }
-
   .cameras-title {
     font-size: 1.3rem;
   }
@@ -422,5 +428,11 @@
   .cameras-add-btn {
     width: 100%;
     justify-content: center;
+  }
+
+  .cameras-stat,
+  .filter-btn {
+    flex: 1;
+    text-align: center;
   }
 }
