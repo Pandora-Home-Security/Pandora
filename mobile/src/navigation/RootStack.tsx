@@ -8,10 +8,8 @@ import { CameraDetailScreen } from '../screens/CameraDetailScreen';
 import { AlarmsScreen } from '../screens/AlarmsScreen';
 import { SensorsScreen } from '../screens/SensorsScreen';
 import { SensorDetailScreen } from '../screens/SensorDetailScreen';
-import {
-  AnalyticsScreen,
-  UsersScreen,
-} from '../screens/placeholder';
+import { AnalyticsScreen } from '../screens/AnalyticsScreen';
+import { UsersScreen } from '../screens/placeholder';
 import { colors } from '../theme/colors';
 
 export type RootStackParamList = {
