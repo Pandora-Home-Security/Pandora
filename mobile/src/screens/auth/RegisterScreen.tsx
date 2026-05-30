@@ -14,7 +14,8 @@ import { BrandHeader } from '../../components/BrandHeader';
 import { Input } from '../../components/Input';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { Alert } from '../../components/Alert';
-import { colors } from '../../theme/colors';
+import { useThemedStyles } from '../../contexts/ThemeContext';
+import type { ColorPalette } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { apiFetch } from '../../lib/api';
 import type { RootStackParamList } from '../../navigation/RootStack';
@@ -22,6 +23,7 @@ import type { RootStackParamList } from '../../navigation/RootStack';
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
 export function RegisterScreen({ navigation }: Props) {
+  const styles = useThemedStyles(makeStyles);
   const [ime, setIme] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -179,57 +181,58 @@ export function RegisterScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.bgDeep,
-  },
-  flex: { flex: 1 },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 22,
-    paddingTop: 32,
-    paddingBottom: 24,
-    justifyContent: 'center',
-  },
-  card: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: 18,
-    padding: 22,
-  },
-  header: {
-    marginBottom: 22,
-  },
-  title: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  subtitle: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-  },
-  footer: {
-    marginTop: 24,
-  },
-  footerLine: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-    marginBottom: 16,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerText: {
-    ...typography.footer,
-    color: colors.textMuted,
-  },
-  link: {
-    ...typography.link,
-    color: colors.accent,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.bgDeep,
+    },
+    flex: { flex: 1 },
+    scroll: {
+      flexGrow: 1,
+      paddingHorizontal: 22,
+      paddingTop: 32,
+      paddingBottom: 24,
+      justifyContent: 'center',
+    },
+    card: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: 18,
+      padding: 22,
+    },
+    header: {
+      marginBottom: 22,
+    },
+    title: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      marginBottom: 4,
+    },
+    subtitle: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+    },
+    footer: {
+      marginTop: 24,
+    },
+    footerLine: {
+      height: 1,
+      backgroundColor: colors.borderSubtle,
+      marginBottom: 16,
+    },
+    footerRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    footerText: {
+      ...typography.footer,
+      color: colors.textMuted,
+    },
+    link: {
+      ...typography.link,
+      color: colors.accent,
+    },
+  });

@@ -16,7 +16,8 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
 import { LoadingState, ErrorState } from '../components/DataStates';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { sensorTypeLabels, sensorTypeColors, type SensorType } from '../data/mockData';
 import {
@@ -48,7 +49,7 @@ type DeviceEvent = {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SensorDetail'>;
 
-function eventBadgeColor(eventType: string): string {
+function eventBadgeColor(eventType: string, colors: ColorPalette): string {
   switch (eventType) {
     case 'alert':
       return colors.error;
@@ -90,6 +91,8 @@ function formatDateTime(iso: string): string {
 export function SensorDetailScreen({ route }: Props) {
   const { id } = route.params;
   const navigation = useNavigation<RootStackNavigation>();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
 
   const [sensor, setSensor] = useState<Sensor | null>(null);
   const [events, setEvents] = useState<DeviceEvent[]>([]);
@@ -340,7 +343,7 @@ export function SensorDetailScreen({ route }: Props) {
             <Text style={styles.emptyEvents}>Nema zabilježenih događaja.</Text>
           )}
           {events.map((ev) => {
-            const tone = eventBadgeColor(ev.event_type);
+            const tone = eventBadgeColor(ev.event_type, colors);
             return (
               <View key={ev.id} style={styles.eventItem}>
                 <View style={[styles.eventBadge, { borderColor: tone }]}>
@@ -388,6 +391,7 @@ export function SensorDetailScreen({ route }: Props) {
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
@@ -398,271 +402,272 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bgDeep },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-    gap: 14,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    padding: 24,
-    backgroundColor: colors.bgDeep,
-  },
-  loaderText: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-  },
-  errorText: {
-    ...typography.formSubheader,
-    color: colors.errorText,
-    textAlign: 'center',
-  },
-  backFallbackBtn: {
-    marginTop: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: radius.button,
-    backgroundColor: colors.accent,
-  },
-  backFallbackText: {
-    ...typography.button,
-    color: colors.bgDeep,
-  },
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    scroll: { flex: 1, backgroundColor: colors.bgDeep },
+    content: {
+      padding: 16,
+      paddingBottom: 32,
+      gap: 14,
+    },
+    centered: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+      padding: 24,
+      backgroundColor: colors.bgDeep,
+    },
+    loaderText: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+    },
+    errorText: {
+      ...typography.formSubheader,
+      color: colors.errorText,
+      textAlign: 'center',
+    },
+    backFallbackBtn: {
+      marginTop: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: radius.button,
+      backgroundColor: colors.accent,
+    },
+    backFallbackText: {
+      ...typography.button,
+      color: colors.bgDeep,
+    },
 
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap',
-  },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-  },
-  backText: {
-    ...typography.link,
-    color: colors.accent,
-  },
-  crudActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  crudBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.button,
-    borderWidth: 1,
-  },
-  crudBtnEdit: {
-    backgroundColor: colors.bgSurface,
-    borderColor: colors.borderSubtle,
-  },
-  crudBtnDelete: {
-    backgroundColor: colors.errorBg,
-    borderColor: colors.errorBorder,
-  },
-  crudBtnPressed: { opacity: 0.75 },
-  crudBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 10,
+      flexWrap: 'wrap',
+    },
+    backBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 4,
+    },
+    backText: {
+      ...typography.link,
+      color: colors.accent,
+    },
+    crudActions: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    crudBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: radius.button,
+      borderWidth: 1,
+    },
+    crudBtnEdit: {
+      backgroundColor: colors.bgSurface,
+      borderColor: colors.borderSubtle,
+    },
+    crudBtnDelete: {
+      backgroundColor: colors.errorBg,
+      borderColor: colors.errorBorder,
+    },
+    crudBtnPressed: { opacity: 0.75 },
+    crudBtnText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
 
-  // Hero
-  hero: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    padding: 18,
-    alignItems: 'center',
-    gap: 10,
-  },
-  heroIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroName: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 17,
-    textAlign: 'center',
-  },
-  heroMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-  },
-  typeBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  locationText: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    fontSize: 12,
-  },
+    // Hero
+    hero: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      padding: 18,
+      alignItems: 'center',
+      gap: 10,
+    },
+    heroIcon: {
+      width: 64,
+      height: 64,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    heroName: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 17,
+      textAlign: 'center',
+    },
+    heroMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+    },
+    typeBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 4,
+    },
+    typeBadgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+    },
+    locationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    locationText: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      fontSize: 12,
+    },
 
-  pillsRow: {
-    flexDirection: 'row',
-    gap: 6,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  pillActive: {
-    backgroundColor: 'rgba(90, 207, 122, 0.1)',
-    borderColor: 'rgba(90, 207, 122, 0.25)',
-  },
-  pillInactive: {
-    backgroundColor: 'rgba(107, 114, 128, 0.1)',
-    borderColor: 'rgba(107, 114, 128, 0.2)',
-  },
-  pillOnline: {
-    backgroundColor: 'rgba(90, 207, 122, 0.1)',
-    borderColor: 'rgba(90, 207, 122, 0.25)',
-  },
-  pillOffline: {
-    backgroundColor: 'rgba(229, 77, 77, 0.1)',
-    borderColor: 'rgba(229, 77, 77, 0.25)',
-  },
-  pillDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  pillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
+    pillsRow: {
+      flexDirection: 'row',
+      gap: 6,
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+    },
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 999,
+      borderWidth: 1,
+    },
+    pillActive: {
+      backgroundColor: 'rgba(90, 207, 122, 0.1)',
+      borderColor: 'rgba(90, 207, 122, 0.25)',
+    },
+    pillInactive: {
+      backgroundColor: 'rgba(107, 114, 128, 0.1)',
+      borderColor: 'rgba(107, 114, 128, 0.2)',
+    },
+    pillOnline: {
+      backgroundColor: 'rgba(90, 207, 122, 0.1)',
+      borderColor: 'rgba(90, 207, 122, 0.25)',
+    },
+    pillOffline: {
+      backgroundColor: 'rgba(229, 77, 77, 0.1)',
+      borderColor: 'rgba(229, 77, 77, 0.25)',
+    },
+    pillDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    pillText: {
+      fontSize: 11,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+    },
 
-  // Panels
-  panel: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    padding: 16,
-  },
-  panelTitle: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-    marginVertical: 12,
-  },
+    // Panels
+    panel: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      padding: 16,
+    },
+    panelTitle: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 16,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.borderSubtle,
+      marginVertical: 12,
+    },
 
-  // Detail row
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    gap: 12,
-  },
-  detailLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  detailValue: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    fontWeight: '500',
-    maxWidth: '65%',
-    textAlign: 'right',
-  },
+    // Detail row
+    detailRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+      gap: 12,
+    },
+    detailLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+    },
+    detailValue: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      fontWeight: '500',
+      maxWidth: '65%',
+      textAlign: 'right',
+    },
 
-  // Events
-  eventsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  eventsCount: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  emptyEvents: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    textAlign: 'center',
-    paddingVertical: 16,
-  },
-  eventItem: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
-  },
-  eventBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    backgroundColor: colors.bgInput,
-    alignSelf: 'flex-start',
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  eventBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  eventBody: {
-    flex: 1,
-    gap: 3,
-  },
-  eventPayload: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  eventTime: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontSize: 11,
-  },
-});
+    // Events
+    eventsHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    eventsCount: {
+      ...typography.label,
+      color: colors.textMuted,
+    },
+    emptyEvents: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      textAlign: 'center',
+      paddingVertical: 16,
+    },
+    eventItem: {
+      flexDirection: 'row',
+      gap: 10,
+      paddingVertical: 10,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSubtle,
+    },
+    eventBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      borderWidth: 1,
+      backgroundColor: colors.bgInput,
+      alignSelf: 'flex-start',
+      minWidth: 80,
+      alignItems: 'center',
+    },
+    eventBadgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 0.3,
+    },
+    eventBody: {
+      flex: 1,
+      gap: 3,
+    },
+    eventPayload: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      fontSize: 13,
+      fontWeight: '500',
+    },
+    eventTime: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 11,
+    },
+  });

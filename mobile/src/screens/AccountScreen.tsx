@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -15,7 +14,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { apiFetch } from '../lib/api';
 import { getAuthUser, setAuthSession, clearAuthSession } from '../lib/auth';
 import { AppScreenLayout } from '../components/AppScreenLayout';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import type { RootStackParamList, RootStackNavigation } from '../navigation/RootStack';
 
@@ -34,6 +34,8 @@ function decodeTokenUser(token: string): { id: string; ime: string; email: strin
 
 export function AccountScreen({ navigation: _navigation }: Props) {
   const rootNav = useNavigation<RootStackNavigation>();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const currentUser = getAuthUser();
 
   const redirectToLogin = () => {
@@ -291,142 +293,143 @@ export function AccountScreen({ navigation: _navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.bgDeep,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 40,
-    gap: 16,
-  },
-  header: {
-    gap: 10,
-    marginBottom: 8,
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    marginBottom: 4,
-  },
-  backText: {
-    ...typography.link,
-    color: colors.accent,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 22,
-  },
-  title: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  card: {
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    padding: 16,
-    gap: 12,
-  },
-  cardTitle: {
-    ...typography.formSubheader,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  currentBox: {
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.input,
-    padding: 12,
-    gap: 8,
-  },
-  currentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  currentLabel: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-  },
-  currentValue: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    fontWeight: '500',
-    maxWidth: '60%',
-    textAlign: 'right',
-  },
-  field: {
-    gap: 4,
-  },
-  label: {
-    ...typography.label,
-    color: colors.textSecondary,
-  },
-  input: {
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.input,
-    color: colors.textPrimary,
-    ...typography.input,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  alertBox: {
-    padding: 12,
-    borderRadius: radius.input,
-    borderWidth: 1,
-  },
-  alertSuccess: {
-    backgroundColor: colors.successBg,
-    borderColor: colors.successBorder,
-  },
-  alertError: {
-    backgroundColor: colors.errorBg,
-    borderColor: colors.errorBorder,
-  },
-  alertText: {
-    ...typography.alert,
-  },
-  alertTextSuccess: {
-    color: colors.successText,
-  },
-  alertTextError: {
-    color: colors.errorText,
-  },
-  btn: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.button,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  btnDisabled: {
-    opacity: 0.6,
-  },
-  btnText: {
-    ...typography.button,
-    color: colors.bgDeep,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.bgDeep,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      padding: 16,
+      paddingBottom: 40,
+      gap: 16,
+    },
+    header: {
+      gap: 10,
+      marginBottom: 8,
+    },
+    backBtn: {
+      alignSelf: 'flex-start',
+      marginBottom: 4,
+    },
+    backText: {
+      ...typography.link,
+      color: colors.accent,
+    },
+    avatar: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarText: {
+      fontSize: 22,
+    },
+    title: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    card: {
+      backgroundColor: colors.bgCard,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      padding: 16,
+      gap: 12,
+    },
+    cardTitle: {
+      ...typography.formSubheader,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: 4,
+    },
+    currentBox: {
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.input,
+      padding: 12,
+      gap: 8,
+    },
+    currentRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    currentLabel: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+    },
+    currentValue: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      fontWeight: '500',
+      maxWidth: '60%',
+      textAlign: 'right',
+    },
+    field: {
+      gap: 4,
+    },
+    label: {
+      ...typography.label,
+      color: colors.textSecondary,
+    },
+    input: {
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.input,
+      color: colors.textPrimary,
+      ...typography.input,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    alertBox: {
+      padding: 12,
+      borderRadius: radius.input,
+      borderWidth: 1,
+    },
+    alertSuccess: {
+      backgroundColor: colors.successBg,
+      borderColor: colors.successBorder,
+    },
+    alertError: {
+      backgroundColor: colors.errorBg,
+      borderColor: colors.errorBorder,
+    },
+    alertText: {
+      ...typography.alert,
+    },
+    alertTextSuccess: {
+      color: colors.successText,
+    },
+    alertTextError: {
+      color: colors.errorText,
+    },
+    btn: {
+      backgroundColor: colors.accent,
+      borderRadius: radius.button,
+      paddingVertical: 14,
+      alignItems: 'center',
+      marginTop: 4,
+    },
+    btnDisabled: {
+      opacity: 0.6,
+    },
+    btnText: {
+      ...typography.button,
+      color: colors.bgDeep,
+    },
+  });

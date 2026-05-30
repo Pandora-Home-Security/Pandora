@@ -12,7 +12,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { haptics } from '../lib/haptics';
 import type { SensorType } from '../data/mockData';
@@ -52,6 +53,8 @@ export function SensorFormModal({
   initialData,
   isEdit,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [name, setName] = useState('');
   const [type, setType] = useState<SensorType>('door');
   const [location, setLocation] = useState('');
@@ -258,135 +261,136 @@ export function SensorFormModal({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 18,
-  },
-  card: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    maxHeight: '90%',
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  title: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-  },
-  form: {
-    padding: 18,
-    gap: 14,
-  },
-  errorBox: {
-    backgroundColor: colors.errorBg,
-    borderWidth: 1,
-    borderColor: colors.errorBorder,
-    borderRadius: radius.input,
-    padding: 10,
-  },
-  errorText: {
-    ...typography.alert,
-    color: colors.errorText,
-  },
-  field: { gap: 6 },
-  label: {
-    ...typography.label,
-    color: colors.textSecondary,
-  },
-  input: {
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.input,
-    color: colors.textPrimary,
-    ...typography.input,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.bgInput,
-  },
-  chipActive: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  chipPressed: {
-    backgroundColor: colors.bgSurface,
-  },
-  chipText: {
-    ...typography.label,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  chipTextActive: {
-    color: colors.bgDeep,
-    fontWeight: '700',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-    padding: 18,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
-  },
-  btn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: radius.button,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnCancel: {
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  btnSubmit: {
-    backgroundColor: colors.accent,
-  },
-  btnPressed: { opacity: 0.85 },
-  btnDisabled: { opacity: 0.5 },
-  btnCancelText: {
-    ...typography.button,
-    color: colors.textPrimary,
-    fontSize: 14,
-  },
-  btnSubmitText: {
-    ...typography.button,
-    color: colors.bgDeep,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: colors.overlayMedium,
+    },
+    center: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 18,
+    },
+    card: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      maxHeight: '90%',
+      overflow: 'hidden',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderSubtle,
+    },
+    title: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 16,
+    },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 16,
+    },
+    form: {
+      padding: 18,
+      gap: 14,
+    },
+    errorBox: {
+      backgroundColor: colors.errorBg,
+      borderWidth: 1,
+      borderColor: colors.errorBorder,
+      borderRadius: radius.input,
+      padding: 10,
+    },
+    errorText: {
+      ...typography.alert,
+      color: colors.errorText,
+    },
+    field: { gap: 6 },
+    label: {
+      ...typography.label,
+      color: colors.textSecondary,
+    },
+    input: {
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.input,
+      color: colors.textPrimary,
+      ...typography.input,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    chipRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+    },
+    chip: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgInput,
+    },
+    chipActive: {
+      backgroundColor: colors.accent,
+      borderColor: colors.accent,
+    },
+    chipPressed: {
+      backgroundColor: colors.bgSurface,
+    },
+    chipText: {
+      ...typography.label,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    chipTextActive: {
+      color: colors.bgDeep,
+      fontWeight: '700',
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 10,
+      padding: 18,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSubtle,
+    },
+    btn: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: radius.button,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    btnCancel: {
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    btnSubmit: {
+      backgroundColor: colors.accent,
+    },
+    btnPressed: { opacity: 0.85 },
+    btnDisabled: { opacity: 0.5 },
+    btnCancelText: {
+      ...typography.button,
+      color: colors.textPrimary,
+      fontSize: 14,
+    },
+    btnSubmitText: {
+      ...typography.button,
+      color: colors.bgDeep,
+    },
+  });

@@ -16,7 +16,8 @@ import { ApiKeyModal } from '../components/ApiKeyModal';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
 import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import {
   sensorTypeLabels,
@@ -170,6 +171,8 @@ const connectionFilterOptions: { key: FilterConnection; label: string }[] = [
 
 export function SensorsScreen() {
   const navigation = useNavigation<RootStackNavigation>();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [sensors, setSensors] = useState<Sensor[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -615,6 +618,7 @@ function FilterChip({
   active: boolean;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -629,323 +633,324 @@ function FilterChip({
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bgDeep },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-    gap: 14,
-  },
-  intro: { gap: 2 },
-  title: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-  },
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    scroll: { flex: 1, backgroundColor: colors.bgDeep },
+    content: {
+      padding: 16,
+      paddingBottom: 32,
+      gap: 14,
+    },
+    intro: { gap: 2 },
+    title: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+    },
 
-  // Dodaj gumb
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: radius.button,
-    backgroundColor: colors.accent,
-  },
-  addBtnPressed: { opacity: 0.85 },
-  addBtnText: {
-    ...typography.button,
-    color: colors.bgDeep,
-  },
+    // Dodaj gumb
+    addBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderRadius: radius.button,
+      backgroundColor: colors.accent,
+    },
+    addBtnPressed: { opacity: 0.85 },
+    addBtnText: {
+      ...typography.button,
+      color: colors.bgDeep,
+    },
 
-  // Stats
-  stats: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statPill: {
-    flex: 1,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.input,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-  },
-  statPillOnline: {
-    borderColor: colors.successBorder,
-    backgroundColor: colors.successBg,
-  },
-  statPillOffline: {
-    borderColor: colors.errorBorder,
-    backgroundColor: colors.errorBg,
-  },
-  statLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontSize: 11,
-    letterSpacing: 0.5,
-  },
-  statLabelOnline: { color: colors.successText },
-  statLabelOffline: { color: colors.errorText },
-  statValue: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 18,
-    marginTop: 2,
-  },
-  statValueOnline: { color: colors.successText },
-  statValueOffline: { color: colors.errorText },
+    // Stats
+    stats: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    statPill: {
+      flex: 1,
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.input,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      alignItems: 'center',
+    },
+    statPillOnline: {
+      borderColor: colors.successBorder,
+      backgroundColor: colors.successBg,
+    },
+    statPillOffline: {
+      borderColor: colors.errorBorder,
+      backgroundColor: colors.errorBg,
+    },
+    statLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 11,
+      letterSpacing: 0.5,
+    },
+    statLabelOnline: { color: colors.successText },
+    statLabelOffline: { color: colors.errorText },
+    statValue: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 18,
+      marginTop: 2,
+    },
+    statValueOnline: { color: colors.successText },
+    statValueOffline: { color: colors.errorText },
 
-  statsSecondary: {
-    alignItems: 'center',
-  },
-  statsSecondaryText: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  statsSecondaryActive: { color: colors.success, fontWeight: '700' },
-  statsSecondaryInactive: { color: colors.textMuted, fontWeight: '700' },
+    statsSecondary: {
+      alignItems: 'center',
+    },
+    statsSecondaryText: {
+      ...typography.label,
+      color: colors.textMuted,
+    },
+    statsSecondaryActive: { color: colors.success, fontWeight: '700' },
+    statsSecondaryInactive: { color: colors.textMuted, fontWeight: '700' },
 
-  // Filteri
-  filtersCard: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    padding: 14,
-    gap: 10,
-  },
-  filterGroup: { gap: 8 },
-  filterGroupLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontSize: 10,
-    letterSpacing: 0.8,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  filterDivider: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-  },
-  filterBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    backgroundColor: 'transparent',
-  },
-  filterBtnActive: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accentGlow,
-  },
-  filterBtnPressed: {
-    backgroundColor: colors.bgInput,
-  },
-  filterBtnText: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  filterBtnTextActive: {
-    color: colors.accent,
-    fontWeight: '600',
-  },
+    // Filteri
+    filtersCard: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      padding: 14,
+      gap: 10,
+    },
+    filterGroup: { gap: 8 },
+    filterGroupLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 10,
+      letterSpacing: 0.8,
+    },
+    filterRow: {
+      flexDirection: 'row',
+      gap: 6,
+      flexWrap: 'wrap',
+    },
+    filterDivider: {
+      height: 1,
+      backgroundColor: colors.borderSubtle,
+    },
+    filterBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: 'transparent',
+      backgroundColor: 'transparent',
+    },
+    filterBtnActive: {
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.accentGlow,
+    },
+    filterBtnPressed: {
+      backgroundColor: colors.bgInput,
+    },
+    filterBtnText: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    filterBtnTextActive: {
+      color: colors.accent,
+      fontWeight: '600',
+    },
 
-  // States
-  errorBox: {
-    backgroundColor: colors.errorBg,
-    borderWidth: 1,
-    borderColor: colors.errorBorder,
-    borderRadius: radius.input,
-    padding: 12,
-  },
-  errorText: {
-    ...typography.alert,
-    color: colors.errorText,
-  },
-  loader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 24,
-  },
-  loaderText: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-  },
-  empty: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
+    // States
+    errorBox: {
+      backgroundColor: colors.errorBg,
+      borderWidth: 1,
+      borderColor: colors.errorBorder,
+      borderRadius: radius.input,
+      padding: 12,
+    },
+    errorText: {
+      ...typography.alert,
+      color: colors.errorText,
+    },
+    loader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      paddingVertical: 24,
+    },
+    loaderText: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+    },
+    empty: {
+      paddingVertical: 40,
+      alignItems: 'center',
+    },
+    emptyText: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
 
-  // Cards
-  grid: { gap: 12 },
-  card: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    padding: 14,
-    gap: 12,
-  },
-  cardInactive: { opacity: 0.7 },
-  cardPressed: {
-    borderColor: colors.accent,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardActions: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  cardActionBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  cardActionBtnDelete: {
-    backgroundColor: colors.errorBg,
-    borderColor: colors.errorBorder,
-  },
-  cardActionBtnPressed: { opacity: 0.7 },
+    // Cards
+    grid: { gap: 12 },
+    card: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      padding: 14,
+      gap: 12,
+    },
+    cardInactive: { opacity: 0.7 },
+    cardPressed: {
+      borderColor: colors.accent,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    iconWrap: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cardActions: {
+      flexDirection: 'row',
+      gap: 6,
+    },
+    cardActionBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    cardActionBtnDelete: {
+      backgroundColor: colors.errorBg,
+      borderColor: colors.errorBorder,
+    },
+    cardActionBtnPressed: { opacity: 0.7 },
 
-  cardBody: { gap: 8 },
-  cardName: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  cardMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-  },
-  typeBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flexShrink: 1,
-  },
-  locationText: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    fontSize: 12,
-  },
+    cardBody: { gap: 8 },
+    cardName: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      fontWeight: '600',
+      fontSize: 15,
+    },
+    cardMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      flexWrap: 'wrap',
+    },
+    typeBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 4,
+    },
+    typeBadgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+    },
+    locationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      flexShrink: 1,
+    },
+    locationText: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      fontSize: 12,
+    },
 
-  pillsRow: {
-    flexDirection: 'row',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  pillActive: {
-    backgroundColor: 'rgba(90, 207, 122, 0.1)',
-    borderColor: 'rgba(90, 207, 122, 0.25)',
-  },
-  pillInactive: {
-    backgroundColor: 'rgba(107, 114, 128, 0.1)',
-    borderColor: 'rgba(107, 114, 128, 0.2)',
-  },
-  pillOnline: {
-    backgroundColor: 'rgba(90, 207, 122, 0.1)',
-    borderColor: 'rgba(90, 207, 122, 0.25)',
-  },
-  pillOffline: {
-    backgroundColor: 'rgba(229, 77, 77, 0.1)',
-    borderColor: 'rgba(229, 77, 77, 0.25)',
-  },
-  pillDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  pillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
+    pillsRow: {
+      flexDirection: 'row',
+      gap: 6,
+      flexWrap: 'wrap',
+    },
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 999,
+      borderWidth: 1,
+    },
+    pillActive: {
+      backgroundColor: 'rgba(90, 207, 122, 0.1)',
+      borderColor: 'rgba(90, 207, 122, 0.25)',
+    },
+    pillInactive: {
+      backgroundColor: 'rgba(107, 114, 128, 0.1)',
+      borderColor: 'rgba(107, 114, 128, 0.2)',
+    },
+    pillOnline: {
+      backgroundColor: 'rgba(90, 207, 122, 0.1)',
+      borderColor: 'rgba(90, 207, 122, 0.25)',
+    },
+    pillOffline: {
+      backgroundColor: 'rgba(229, 77, 77, 0.1)',
+      borderColor: 'rgba(229, 77, 77, 0.25)',
+    },
+    pillDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    pillText: {
+      fontSize: 11,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+    },
 
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.input,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  readingLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontSize: 10,
-    letterSpacing: 0.5,
-  },
-  readingValue: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  lastSeen: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontSize: 11,
-  },
-});
+    cardFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.input,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    readingLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 10,
+      letterSpacing: 0.5,
+    },
+    readingValue: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      fontWeight: '600',
+      fontSize: 13,
+      marginTop: 2,
+    },
+    lastSeen: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 11,
+    },
+  });

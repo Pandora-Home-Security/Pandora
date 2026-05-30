@@ -15,7 +15,8 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
 import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import type { RootStackNavigation } from '../navigation/RootStack';
 
@@ -48,6 +49,8 @@ function formatLastSeen(isoDate: string) {
 
 export function CamerasScreen() {
   const navigation = useNavigation<RootStackNavigation>();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -403,6 +406,8 @@ type FilterBtnProps = {
 };
 
 function FilterBtn({ label, active, onPress, tone }: FilterBtnProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const activeColor =
     tone === 'online' ? colors.success : tone === 'offline' ? colors.error : colors.accent;
 
@@ -427,250 +432,251 @@ function FilterBtn({ label, active, onPress, tone }: FilterBtnProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bgDeep },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-    gap: 14,
-  },
-  intro: {
-    gap: 2,
-  },
-  title: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-  },
-  stats: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statPill: {
-    flex: 1,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.input,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-  },
-  statPillOnline: {
-    borderColor: colors.successBorder,
-    backgroundColor: colors.successBg,
-  },
-  statPillOffline: {
-    borderColor: colors.errorBorder,
-    backgroundColor: colors.errorBg,
-  },
-  statLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontSize: 11,
-    letterSpacing: 0.5,
-  },
-  statLabelOnline: { color: colors.successText },
-  statLabelOffline: { color: colors.errorText },
-  statValue: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 18,
-    marginTop: 2,
-  },
-  statValueOnline: { color: colors.successText },
-  statValueOffline: { color: colors.errorText },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: radius.button,
-    backgroundColor: colors.accent,
-  },
-  addBtnPressed: { opacity: 0.85 },
-  addBtnText: {
-    ...typography.button,
-    color: colors.bgDeep,
-  },
-  cardActions: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    flexDirection: 'row',
-    gap: 6,
-  },
-  cardActionBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  cardActionBtnDelete: {
-    backgroundColor: 'rgba(229,77,77,0.65)',
-    borderColor: colors.errorBorder,
-  },
-  cardActionBtnPressed: {
-    opacity: 0.75,
-  },
-  filters: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  filterBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.bgSurface,
-  },
-  filterBtnPressed: {
-    backgroundColor: colors.bgInput,
-  },
-  filterText: {
-    ...typography.label,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  errorBox: {
-    backgroundColor: colors.errorBg,
-    borderWidth: 1,
-    borderColor: colors.errorBorder,
-    borderRadius: radius.input,
-    padding: 12,
-  },
-  errorText: {
-    ...typography.alert,
-    color: colors.errorText,
-  },
-  loader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 24,
-  },
-  loaderText: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-  },
-  empty: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  grid: {
-    gap: 12,
-  },
-  card: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-  },
-  cardPressed: {
-    borderColor: colors.accent,
-    opacity: 0.92,
-  },
-  thumb: {
-    height: 140,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bgDeep,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  thumbOnline: {
-    backgroundColor: '#0b1220',
-  },
-  thumbOffline: {
-    backgroundColor: '#18181b',
-  },
-  liveBadge: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: colors.error,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.textPrimary,
-  },
-  liveText: {
-    color: colors.textPrimary,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  offlineBadge: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  offlineText: {
-    color: colors.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  info: {
-    padding: 12,
-    gap: 6,
-  },
-  infoTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardName: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 16,
-    flex: 1,
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  metaText: {
-    ...typography.label,
-    color: colors.textMuted,
-    flex: 1,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    scroll: { flex: 1, backgroundColor: colors.bgDeep },
+    content: {
+      padding: 16,
+      paddingBottom: 32,
+      gap: 14,
+    },
+    intro: {
+      gap: 2,
+    },
+    title: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+    },
+    stats: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    statPill: {
+      flex: 1,
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.input,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      alignItems: 'center',
+    },
+    statPillOnline: {
+      borderColor: colors.successBorder,
+      backgroundColor: colors.successBg,
+    },
+    statPillOffline: {
+      borderColor: colors.errorBorder,
+      backgroundColor: colors.errorBg,
+    },
+    statLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 11,
+      letterSpacing: 0.5,
+    },
+    statLabelOnline: { color: colors.successText },
+    statLabelOffline: { color: colors.errorText },
+    statValue: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 18,
+      marginTop: 2,
+    },
+    statValueOnline: { color: colors.successText },
+    statValueOffline: { color: colors.errorText },
+    addBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderRadius: radius.button,
+      backgroundColor: colors.accent,
+    },
+    addBtnPressed: { opacity: 0.85 },
+    addBtnText: {
+      ...typography.button,
+      color: colors.bgDeep,
+    },
+    cardActions: {
+      position: 'absolute',
+      top: 10,
+      right: 10,
+      flexDirection: 'row',
+      gap: 6,
+    },
+    cardActionBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    cardActionBtnDelete: {
+      backgroundColor: 'rgba(229,77,77,0.65)',
+      borderColor: colors.errorBorder,
+    },
+    cardActionBtnPressed: {
+      opacity: 0.75,
+    },
+    filters: {
+      flexDirection: 'row',
+      gap: 8,
+      flexWrap: 'wrap',
+    },
+    filterBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgSurface,
+    },
+    filterBtnPressed: {
+      backgroundColor: colors.bgInput,
+    },
+    filterText: {
+      ...typography.label,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    errorBox: {
+      backgroundColor: colors.errorBg,
+      borderWidth: 1,
+      borderColor: colors.errorBorder,
+      borderRadius: radius.input,
+      padding: 12,
+    },
+    errorText: {
+      ...typography.alert,
+      color: colors.errorText,
+    },
+    loader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      paddingVertical: 24,
+    },
+    loaderText: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+    },
+    empty: {
+      paddingVertical: 40,
+      alignItems: 'center',
+    },
+    emptyText: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    grid: {
+      gap: 12,
+    },
+    card: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      overflow: 'hidden',
+    },
+    cardPressed: {
+      borderColor: colors.accent,
+      opacity: 0.92,
+    },
+    thumb: {
+      height: 140,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.bgDeep,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderSubtle,
+    },
+    thumbOnline: {
+      backgroundColor: '#0b1220',
+    },
+    thumbOffline: {
+      backgroundColor: '#18181b',
+    },
+    liveBadge: {
+      position: 'absolute',
+      top: 10,
+      left: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      backgroundColor: colors.error,
+    },
+    liveDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.textPrimary,
+    },
+    liveText: {
+      color: colors.textPrimary,
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 0.8,
+    },
+    offlineBadge: {
+      position: 'absolute',
+      top: 10,
+      left: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    offlineText: {
+      color: colors.textMuted,
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 0.8,
+    },
+    info: {
+      padding: 12,
+      gap: 6,
+    },
+    infoTop: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    cardName: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 16,
+      flex: 1,
+    },
+    statusDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    metaText: {
+      ...typography.label,
+      color: colors.textMuted,
+      flex: 1,
+    },
+  });

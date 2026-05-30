@@ -10,7 +10,7 @@ import { SensorsScreen } from '../screens/SensorsScreen';
 import { SensorDetailScreen } from '../screens/SensorDetailScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { UsersScreen } from '../screens/placeholder';
-import { colors } from '../theme/colors';
+import { useTheme } from '../contexts/ThemeContext';
 
 export type RootStackParamList = {
   Login: { justRegistered?: boolean } | undefined;
@@ -31,6 +31,8 @@ export type RootStackNavigation = NativeStackNavigationProp<RootStackParamList>;
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootStack() {
+  const { colors } = useTheme();
+
   return (
     <Stack.Navigator
       initialRouteName="Login"

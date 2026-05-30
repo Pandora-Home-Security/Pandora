@@ -1,24 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ===== Variables ===== */
-:root {
-  --bg-deep: #0a0c10;
-  --bg-surface: #111318;
-  --bg-card: #161820;
-  --bg-input: #1a1d26;
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-hover: rgba(255, 255, 255, 0.12);
-  --text-primary: #eef0f4;
-  --text-secondary: #8a8f9c;
-  --text-muted: #5c6070;
-  --accent: #d4a853;
-  --accent-soft: rgba(212, 168, 83, 0.12);
-  --accent-glow: rgba(212, 168, 83, 0.25);
-  --error: #e54d4d;
-  --error-bg: rgba(229, 77, 77, 0.08);
-  --radius: 14px;
-  --radius-sm: 10px;
-}
+/* CSS varijable za temu su u src/index.css (globalno, dijeli ih cijela aplikacija). */
 
 /* ===== Page ===== */
 .login-page {

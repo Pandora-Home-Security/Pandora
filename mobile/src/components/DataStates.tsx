@@ -1,10 +1,13 @@
 import type { ReactNode } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 
 export function LoadingState({ message = 'Učitavanje...' }: { message?: string }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
       <ActivityIndicator color={colors.accent} size="large" />
@@ -22,6 +25,8 @@ export function ErrorState({
   onRetry?: () => void;
   children?: ReactNode;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
       <Svg
@@ -66,6 +71,8 @@ export function EmptyState({
   message: string;
   icon?: ReactNode;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
       {icon ?? (
@@ -90,48 +97,49 @@ export function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-    gap: 12,
-  },
-  text: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  errorText: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    textAlign: 'center',
-    maxWidth: 280,
-  },
-  emptyText: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    textAlign: 'center',
-    maxWidth: 280,
-  },
-  retryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: radius.button,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    backgroundColor: colors.accentSoft,
-  },
-  retryBtnPressed: {
-    backgroundColor: colors.accent,
-  },
-  retryText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.accent,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 48,
+      paddingHorizontal: 24,
+      gap: 12,
+    },
+    text: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    errorText: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      textAlign: 'center',
+      maxWidth: 280,
+    },
+    emptyText: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      textAlign: 'center',
+      maxWidth: 280,
+    },
+    retryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: radius.button,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      backgroundColor: colors.accentSoft,
+    },
+    retryBtnPressed: {
+      backgroundColor: colors.accent,
+    },
+    retryText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.accent,
+    },
+  });
