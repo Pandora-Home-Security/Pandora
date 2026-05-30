@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   Pressable,
   RefreshControl,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { AppScreenLayout } from '../components/AppScreenLayout';
+import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
 import { apiFetch } from '../lib/api';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
@@ -74,6 +74,7 @@ export function AlarmsScreen() {
     alarms,
     unreadCount,
     isLoading,
+    error,
     markAsRead,
     markAllAsRead,
     refresh,
@@ -237,34 +238,32 @@ export function AlarmsScreen() {
           </View>
         </View>
 
-        {isLoading && alarms.length === 0 && (
-          <View style={styles.loader}>
-            <ActivityIndicator color={colors.accent} />
-            <Text style={styles.loaderText}>Učitavanje alarma...</Text>
-          </View>
-        )}
-
-        {!isLoading && filtered.length === 0 && (
-          <View style={styles.empty}>
-            <Svg
-              viewBox="0 0 24 24"
-              width={48}
-              height={48}
-              fill="none"
-              stroke={colors.textMuted}
-              strokeWidth={1.5}
-            >
-              <Path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
-              />
-            </Svg>
-            <Text style={styles.emptyText}>Nema alarma za prikaz s trenutnim filterima.</Text>
-          </View>
-        )}
-
-        {filtered.length > 0 && (
+        {isLoading && alarms.length === 0 ? (
+          <LoadingState message="Učitavanje alarma..." />
+        ) : error && alarms.length === 0 ? (
+          <ErrorState message="Greška pri dohvaćanju alarma." onRetry={() => void refresh()} />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            message={alarms.length === 0 ? 'Još nema zabilježenih alarma.' : 'Nema alarma za prikaz s trenutnim filterima.'}
+            icon={
+              <Svg
+                viewBox="0 0 24 24"
+                width={48}
+                height={48}
+                fill="none"
+                stroke={colors.textMuted}
+                strokeWidth={1.5}
+                opacity={0.35}
+              >
+                <Path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+                />
+              </Svg>
+            }
+          />
+        ) : (
           <View style={styles.list}>
             {filtered.map((alarm) => (
               <AlarmCard

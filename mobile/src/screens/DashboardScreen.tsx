@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -14,6 +13,7 @@ import { StatCard } from '../components/StatCard';
 import { AppScreenLayout } from '../components/AppScreenLayout';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
+import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
 import {
   mockAlarms,
   alarmTypeBadge,
@@ -59,16 +59,18 @@ export function DashboardScreen() {
         return;
       }
 
-      const camData = await camRes.json();
-      if (!camRes.ok) {
-        setError(camData.message || 'Neuspješno dohvaćanje kamera.');
-        return;
+      if (camRes.ok) {
+        const camData = await camRes.json();
+        setCameras(camData.cameras ?? []);
       }
-      setCameras(camData.cameras ?? []);
 
       if (senRes.ok) {
         const senData = await senRes.json();
         setSensors(senData.sensors ?? []);
+      }
+
+      if (!camRes.ok || !senRes.ok) {
+        setError('Greška pri dohvaćanju podataka.');
       }
     } catch {
       setError('Greška pri dohvaćanju zaštićenih podataka.');
@@ -93,6 +95,22 @@ export function DashboardScreen() {
   const unreadAlarms = mockAlarms.length;
   const lastFiveAlarms = mockAlarms.slice(0, 5);
 
+  if (loading) {
+    return (
+      <AppScreenLayout title="Dashboard">
+        <LoadingState message="Učitavanje nadzorne ploče..." />
+      </AppScreenLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppScreenLayout title="Dashboard">
+        <ErrorState message={error} onRetry={() => void loadData()} />
+      </AppScreenLayout>
+    );
+  }
+
   return (
     <AppScreenLayout title="Dashboard">
     <ScrollView
@@ -107,12 +125,12 @@ export function DashboardScreen() {
         />
       }
     >
-      {/* Stat kartice — vertikalno na mobitelu (1 stupac na uskim, 3 na sirim) */}
+      {/* Stat kartice */}
       <View style={styles.statsGrid}>
         <StatCard
           variant="cameras"
           label="Aktivne kamere"
-          value={loading ? '...' : `${activeCameras}/${cameras.length}`}
+          value={`${activeCameras}/${cameras.length}`}
         />
         <StatCard
           variant="sensors"
@@ -125,12 +143,6 @@ export function DashboardScreen() {
           value={String(unreadAlarms)}
         />
       </View>
-
-      {!!error && (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
 
       {/* Zadnjih 5 alarma */}
       <View style={styles.panel}>
@@ -167,7 +179,7 @@ export function DashboardScreen() {
             Neaktivni: {inactiveSensors}
           </Text>
         </View>
-        {sensors.length === 0 && !loading && (
+        {sensors.length === 0 && (
           <Text style={styles.emptyText}>Nema senzora za prikaz.</Text>
         )}
         {sensors.map((sensor) => {
@@ -213,16 +225,9 @@ export function DashboardScreen() {
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Kamere</Text>
         <View style={styles.divider} />
-        {loading && (
-          <View style={styles.loaderBox}>
-            <ActivityIndicator color={colors.accent} />
-            <Text style={styles.loaderText}>Učitavanje kamera...</Text>
-          </View>
-        )}
-        {!loading && !error && cameras.length === 0 && (
+        {cameras.length === 0 ? (
           <Text style={styles.emptyText}>Nema kamera za prikaz.</Text>
-        )}
-        {!loading && cameras.length > 0 && (
+        ) : (
           <View style={styles.cameraGrid}>
             {cameras.map((camera) => (
               <View key={camera.id} style={styles.cameraCard}>

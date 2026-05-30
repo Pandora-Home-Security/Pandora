@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   Pressable,
   RefreshControl,
 } from 'react-native';
@@ -15,6 +14,7 @@ import { CameraFormModal, type CameraFormData } from '../components/CameraFormMo
 import { ConfirmModal } from '../components/ConfirmModal';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
+import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
 import type { RootStackNavigation } from '../navigation/RootStack';
@@ -223,26 +223,32 @@ export function CamerasScreen() {
           />
         </View>
 
-        {!!error && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-
-        {loading && (
-          <View style={styles.loader}>
-            <ActivityIndicator color={colors.accent} />
-            <Text style={styles.loaderText}>Učitavanje kamera...</Text>
-          </View>
-        )}
-
-        {!loading && !error && filtered.length === 0 && (
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>Nema kamera za prikaz s trenutnim filterom.</Text>
-          </View>
-        )}
-
-        {!loading && filtered.length > 0 && (
+        {loading ? (
+          <LoadingState message="Učitavanje kamera..." />
+        ) : error ? (
+          <ErrorState message={error} onRetry={() => void loadCameras()} />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            message={cameras.length === 0 ? 'Još nema dodanih kamera.' : 'Nema kamera za prikaz s trenutnim filterom.'}
+            icon={
+              <Svg
+                viewBox="0 0 24 24"
+                width={48}
+                height={48}
+                fill="none"
+                stroke={colors.textMuted}
+                strokeWidth={1.5}
+                opacity={0.35}
+              >
+                <Path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
+                />
+              </Svg>
+            }
+          />
+        ) : (
           <View style={styles.grid}>
             {filtered.map((camera) => (
               <Pressable

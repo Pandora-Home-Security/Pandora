@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   Pressable,
   Modal,
   StatusBar,
@@ -18,6 +17,7 @@ import { CameraFormModal, type CameraFormData } from '../components/CameraFormMo
 import { ConfirmModal } from '../components/ConfirmModal';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
+import { LoadingState, ErrorState } from '../components/DataStates';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
 import type { RootStackParamList, RootStackNavigation } from '../navigation/RootStack';
@@ -57,6 +57,7 @@ export function CameraDetailScreen({ route }: Props) {
   const [camera, setCamera] = useState<Camera | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [notFound, setNotFound] = useState(false);
 
   const [isPlaying, setIsPlaying] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -66,46 +67,52 @@ export function CameraDetailScreen({ route }: Props) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  // Fetch kamera
-  useEffect(() => {
-    let cancelled = false;
+  const zahtjevIdRef = useRef(0);
 
-    const load = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const res = await apiFetch(`/api/cameras/${id}`, { includeAuth: true });
+  const loadCamera = useCallback(async () => {
+    const zahtjevId = ++zahtjevIdRef.current;
+    setLoading(true);
+    setError('');
+    setNotFound(false);
 
-        if (res.status === 401) {
-          clearAuthSession();
-          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-          return;
-        }
+    try {
+      const res = await apiFetch(`/api/cameras/${id}`, { includeAuth: true });
+      const data = await res.json();
 
-        if (res.status === 404) {
-          if (!cancelled) setError('Kamera nije pronađena.');
-          return;
-        }
+      if (zahtjevId !== zahtjevIdRef.current) return;
 
-        const data = await res.json();
-        if (!res.ok) {
-          if (!cancelled) setError(data.message || 'Neuspješno dohvaćanje kamere.');
-          return;
-        }
-
-        if (!cancelled) setCamera(data.camera ?? null);
-      } catch {
-        if (!cancelled) setError('Greška pri dohvaćanju podataka o kameri.');
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (res.status === 401) {
+        clearAuthSession();
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
       }
-    };
 
-    void load();
-    return () => {
-      cancelled = true;
-    };
+      if (res.status === 404) {
+        setNotFound(true);
+        setError('Kamera nije pronađena.');
+        return;
+      }
+
+      if (!res.ok) {
+        setError(data.message || 'Neuspješno dohvaćanje kamere.');
+        return;
+      }
+
+      setCamera(data.camera ?? null);
+    } catch {
+      if (zahtjevId === zahtjevIdRef.current) {
+        setError('Greška pri dohvaćanju podataka o kameri.');
+      }
+    } finally {
+      if (zahtjevId === zahtjevIdRef.current) {
+        setLoading(false);
+      }
+    }
   }, [id, navigation]);
+
+  useEffect(() => {
+    void loadCamera();
+  }, [loadCamera]);
 
   // Simulacija live timestampa
   useEffect(() => {
@@ -159,10 +166,7 @@ export function CameraDetailScreen({ route }: Props) {
   if (loading) {
     return (
       <AppScreenLayout title="Kamera">
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.accent} />
-          <Text style={styles.loaderText}>Učitavanje kamere...</Text>
-        </View>
+        <LoadingState message="Učitavanje kamere..." />
       </AppScreenLayout>
     );
   }
@@ -170,12 +174,14 @@ export function CameraDetailScreen({ route }: Props) {
   if (error || !camera) {
     return (
       <AppScreenLayout title="Kamera">
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>{error || 'Kamera nije dostupna.'}</Text>
+        <ErrorState
+          message={error || 'Kamera nije dostupna.'}
+          onRetry={notFound ? undefined : () => void loadCamera()}
+        >
           <Pressable onPress={handleBack} style={styles.backFallbackBtn}>
             <Text style={styles.backFallbackText}>Povratak na popis kamera</Text>
           </Pressable>
-        </View>
+        </ErrorState>
       </AppScreenLayout>
     );
   }

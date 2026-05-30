@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   Pressable,
   RefreshControl,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
+import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
 import {
@@ -392,26 +392,32 @@ export function SensorsScreen() {
           </View>
         </View>
 
-        {!!error && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-
-        {loading && (
-          <View style={styles.loader}>
-            <ActivityIndicator color={colors.accent} />
-            <Text style={styles.loaderText}>Učitavanje senzora...</Text>
-          </View>
-        )}
-
-        {!loading && !error && filtered.length === 0 && (
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>Nema senzora za prikaz s trenutnim filterima.</Text>
-          </View>
-        )}
-
-        {!loading && filtered.length > 0 && (
+        {loading ? (
+          <LoadingState message="Učitavanje senzora..." />
+        ) : error ? (
+          <ErrorState message={error} onRetry={() => void fetchSensors()} />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            message={sensors.length === 0 ? 'Još nema dodanih senzora.' : 'Nema senzora za prikaz s trenutnim filterima.'}
+            icon={
+              <Svg
+                viewBox="0 0 24 24"
+                width={48}
+                height={48}
+                fill="none"
+                stroke={colors.textMuted}
+                strokeWidth={1.5}
+                opacity={0.35}
+              >
+                <Path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z"
+                />
+              </Svg>
+            }
+          />
+        ) : (
           <View style={styles.grid}>
             {filtered.map((sensor) => {
               const typeColor = sensorTypeColors[sensor.type];
