@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   Pressable,
   RefreshControl,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { SensorFormModal, type SensorFormData } from '../components/SensorFormMo
 import { ConfirmModal } from '../components/ConfirmModal';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
+import { LoadingState, ErrorState } from '../components/DataStates';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { sensorTypeLabels, sensorTypeColors, type SensorType } from '../data/mockData';
@@ -96,6 +96,7 @@ export function SensorDetailScreen({ route }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const [notFound, setNotFound] = useState(false);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -104,6 +105,7 @@ export function SensorDetailScreen({ route }: Props) {
     async (isRefresh = false) => {
       if (!isRefresh) setLoading(true);
       setError('');
+      setNotFound(false);
 
       try {
         const [sensorRes, eventsRes] = await Promise.all([
@@ -118,6 +120,7 @@ export function SensorDetailScreen({ route }: Props) {
         }
 
         if (sensorRes.status === 404) {
+          setNotFound(true);
           setError('Senzor nije pronađen.');
           return;
         }
@@ -185,10 +188,7 @@ export function SensorDetailScreen({ route }: Props) {
   if (loading) {
     return (
       <AppScreenLayout title="Senzor">
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.accent} />
-          <Text style={styles.loaderText}>Učitavanje...</Text>
-        </View>
+        <LoadingState message="Učitavanje senzora..." />
       </AppScreenLayout>
     );
   }
@@ -196,12 +196,14 @@ export function SensorDetailScreen({ route }: Props) {
   if (error || !sensor) {
     return (
       <AppScreenLayout title="Senzor">
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>{error || 'Senzor nije dostupan.'}</Text>
+        <ErrorState
+          message={error || 'Senzor nije dostupan.'}
+          onRetry={notFound ? undefined : () => void load()}
+        >
           <Pressable onPress={handleBack} style={styles.backFallbackBtn}>
             <Text style={styles.backFallbackText}>Povratak na popis senzora</Text>
           </Pressable>
-        </View>
+        </ErrorState>
       </AppScreenLayout>
     );
   }
