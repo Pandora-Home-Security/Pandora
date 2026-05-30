@@ -12,7 +12,8 @@ import { AppScreenLayout } from '../components/AppScreenLayout';
 import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
 import { apiFetch } from '../lib/api';
 import { haptics } from '../lib/haptics';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import {
   useNotifications,
@@ -80,6 +81,8 @@ export function AlarmsScreen() {
     markAllAsRead,
     refresh,
   } = useNotifications();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
 
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
@@ -292,6 +295,7 @@ function FilterChip({
   active: boolean;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -313,6 +317,8 @@ function AlarmCard({
   alarm: Alarm;
   onMarkAsRead: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const tone = typeColors[alarm.type];
 
   return (
@@ -377,257 +383,258 @@ function AlarmCard({
 
 /* ===== Styles ===== */
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bgDeep },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-    gap: 14,
-  },
-  intro: { gap: 2 },
-  title: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-  },
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    scroll: { flex: 1, backgroundColor: colors.bgDeep },
+    content: {
+      padding: 16,
+      paddingBottom: 32,
+      gap: 14,
+    },
+    intro: { gap: 2 },
+    title: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+    },
 
-  stats: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statPill: {
-    flex: 1,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.input,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-  },
-  statPillUnread: {
-    borderColor: colors.errorBorder,
-    backgroundColor: colors.errorBg,
-  },
-  statLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontSize: 11,
-    letterSpacing: 0.5,
-  },
-  statLabelUnread: { color: colors.errorText },
-  statValue: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 18,
-    marginTop: 2,
-  },
-  statValueUnread: { color: colors.errorText },
+    stats: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    statPill: {
+      flex: 1,
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.input,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      alignItems: 'center',
+    },
+    statPillUnread: {
+      borderColor: colors.errorBorder,
+      backgroundColor: colors.errorBg,
+    },
+    statLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 11,
+      letterSpacing: 0.5,
+    },
+    statLabelUnread: { color: colors.errorText },
+    statValue: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 18,
+      marginTop: 2,
+    },
+    statValueUnread: { color: colors.errorText },
 
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  simulateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: radius.button,
-    backgroundColor: colors.accent,
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  simulateBtnPressed: { opacity: 0.85 },
-  simulateBtnDisabled: { opacity: 0.5 },
-  simulateText: {
-    ...typography.button,
-    color: colors.bgDeep,
-  },
-  markAllBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: radius.button,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.bgSurface,
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  markAllBtnPressed: { backgroundColor: colors.bgInput },
-  markAllText: {
-    ...typography.button,
-    color: colors.textPrimary,
-    fontSize: 13,
-  },
+    actionsRow: {
+      flexDirection: 'row',
+      gap: 8,
+      flexWrap: 'wrap',
+    },
+    simulateBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: radius.button,
+      backgroundColor: colors.accent,
+      flexGrow: 1,
+      justifyContent: 'center',
+    },
+    simulateBtnPressed: { opacity: 0.85 },
+    simulateBtnDisabled: { opacity: 0.5 },
+    simulateText: {
+      ...typography.button,
+      color: colors.bgDeep,
+    },
+    markAllBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: radius.button,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgSurface,
+      flexGrow: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    markAllBtnPressed: { backgroundColor: colors.bgInput },
+    markAllText: {
+      ...typography.button,
+      color: colors.textPrimary,
+      fontSize: 13,
+    },
 
-  filterGroup: {
-    gap: 6,
-  },
-  filterGroupLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.bgSurface,
-  },
-  chipActive: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  chipPressed: { backgroundColor: colors.bgInput },
-  chipText: {
-    ...typography.label,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  chipTextActive: {
-    color: colors.bgDeep,
-    fontWeight: '700',
-  },
+    filterGroup: {
+      gap: 6,
+    },
+    filterGroupLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontWeight: '600',
+    },
+    filterRow: {
+      flexDirection: 'row',
+      gap: 6,
+      flexWrap: 'wrap',
+    },
+    chip: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgSurface,
+    },
+    chipActive: {
+      backgroundColor: colors.accent,
+      borderColor: colors.accent,
+    },
+    chipPressed: { backgroundColor: colors.bgInput },
+    chipText: {
+      ...typography.label,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    chipTextActive: {
+      color: colors.bgDeep,
+      fontWeight: '700',
+    },
 
-  loader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 24,
-  },
-  loaderText: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-  },
-  empty: {
-    paddingVertical: 40,
-    alignItems: 'center',
-    gap: 8,
-  },
-  emptyText: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
+    loader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      paddingVertical: 24,
+    },
+    loaderText: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+    },
+    empty: {
+      paddingVertical: 40,
+      alignItems: 'center',
+      gap: 8,
+    },
+    emptyText: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
 
-  list: {
-    gap: 10,
-  },
-  card: {
-    flexDirection: 'row',
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-  },
-  cardUnread: {
-    borderColor: colors.accent,
-    backgroundColor: colors.bgCard,
-  },
-  cardAccent: {
-    width: 4,
-  },
-  cardBody: {
-    flex: 1,
-    padding: 12,
-    gap: 8,
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
-  typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    backgroundColor: colors.bgInput,
-  },
-  typeBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  statusBadgeUnread: {
-    borderColor: colors.errorBorder,
-    backgroundColor: colors.errorBg,
-  },
-  statusBadgeRead: {
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.bgInput,
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  statusBadgeTextUnread: { color: colors.errorText },
-  statusBadgeTextRead: { color: colors.textMuted },
+    list: {
+      gap: 10,
+    },
+    card: {
+      flexDirection: 'row',
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      overflow: 'hidden',
+    },
+    cardUnread: {
+      borderColor: colors.accent,
+      backgroundColor: colors.bgCard,
+    },
+    cardAccent: {
+      width: 4,
+    },
+    cardBody: {
+      flex: 1,
+      padding: 12,
+      gap: 8,
+    },
+    cardTopRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 8,
+    },
+    typeBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+      borderWidth: 1,
+      backgroundColor: colors.bgInput,
+    },
+    typeBadgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+    },
+    statusBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+      borderWidth: 1,
+    },
+    statusBadgeUnread: {
+      borderColor: colors.errorBorder,
+      backgroundColor: colors.errorBg,
+    },
+    statusBadgeRead: {
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgInput,
+    },
+    statusBadgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+    },
+    statusBadgeTextUnread: { color: colors.errorText },
+    statusBadgeTextRead: { color: colors.textMuted },
 
-  cardMessage: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  cardMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexShrink: 1,
-  },
-  metaText: {
-    ...typography.label,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  metaTime: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  readBtn: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.input,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    marginTop: 4,
-  },
-  readBtnPressed: { opacity: 0.7 },
-  readBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.accent,
-  },
-});
+    cardMessage: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      fontWeight: '500',
+    },
+    cardMeta: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 8,
+    },
+    metaItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      flexShrink: 1,
+    },
+    metaText: {
+      ...typography.label,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    metaTime: {
+      ...typography.label,
+      color: colors.textMuted,
+    },
+    readBtn: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radius.input,
+      backgroundColor: colors.accentSoft,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      marginTop: 4,
+    },
+    readBtnPressed: { opacity: 0.7 },
+    readBtnText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.accent,
+    },
+  });

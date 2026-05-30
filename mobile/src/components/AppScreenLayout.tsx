@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { useThemedStyles } from '../contexts/ThemeContext';
+import type { ColorPalette } from '../theme/colors';
 import { AppHeader } from './AppHeader';
 import { DrawerMenu } from './DrawerMenu';
 
@@ -11,6 +12,7 @@ type Props = {
 
 export function AppScreenLayout({ title, children }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <View style={styles.root}>
@@ -21,12 +23,13 @@ export function AppScreenLayout({ title, children }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bgDeep,
-  },
-  content: {
-    flex: 1,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.bgDeep,
+    },
+    content: {
+      flex: 1,
+    },
+  });

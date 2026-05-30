@@ -7,13 +7,14 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { StatCard } from '../components/StatCard';
 import { AppScreenLayout } from '../components/AppScreenLayout';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
-import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
+import { LoadingState, ErrorState } from '../components/DataStates';
 import {
   mockAlarms,
   alarmTypeBadge,
@@ -37,6 +38,8 @@ type DashboardSensor = {
 
 export function DashboardScreen() {
   const rootNav = useNavigation<RootStackNavigation>();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [sensors, setSensors] = useState<DashboardSensor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,184 +275,185 @@ export function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-    backgroundColor: colors.bgDeep,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-    gap: 16,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  errorBox: {
-    backgroundColor: colors.errorBg,
-    borderWidth: 1,
-    borderColor: colors.errorBorder,
-    borderRadius: radius.input,
-    padding: 12,
-  },
-  errorText: {
-    ...typography.alert,
-    color: colors.errorText,
-  },
-  panel: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    padding: 16,
-  },
-  panelTitle: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-    marginVertical: 12,
-  },
-  alarmItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 8,
-  },
-  alarmBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    backgroundColor: colors.bgInput,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alarmBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  alarmInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  alarmMessage: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  alarmTime: {
-    ...typography.label,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  sensorSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 8,
-    marginBottom: 6,
-  },
-  sensorSummaryItem: {
-    ...typography.formSubheader,
-    fontWeight: '600',
-  },
-  summaryActive: {
-    color: colors.success,
-  },
-  summaryInactive: {
-    color: colors.textMuted,
-  },
-  summaryDivider: {
-    color: colors.borderHover,
-  },
-  sensorItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
-  },
-  sensorDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  sensorName: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  sensorStatus: {
-    ...typography.label,
-    fontWeight: '600',
-  },
-  loaderBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 16,
-  },
-  loaderText: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-  },
-  emptyText: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    textAlign: 'center',
-    paddingVertical: 16,
-  },
-  cameraGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  cameraCard: {
-    flexBasis: '48%',
-    flexGrow: 1,
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.input,
-    padding: 12,
-    gap: 4,
-  },
-  cameraIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    backgroundColor: colors.bgSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  cameraIconText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  cameraName: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  cameraMeta: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  cameraStatus: {
-    ...typography.label,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    scroll: {
+      flex: 1,
+      backgroundColor: colors.bgDeep,
+    },
+    content: {
+      padding: 16,
+      paddingBottom: 32,
+      gap: 16,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    errorBox: {
+      backgroundColor: colors.errorBg,
+      borderWidth: 1,
+      borderColor: colors.errorBorder,
+      borderRadius: radius.input,
+      padding: 12,
+    },
+    errorText: {
+      ...typography.alert,
+      color: colors.errorText,
+    },
+    panel: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      padding: 16,
+    },
+    panelTitle: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 16,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.borderSubtle,
+      marginVertical: 12,
+    },
+    alarmItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 8,
+    },
+    alarmBadge: {
+      width: 42,
+      height: 42,
+      borderRadius: 10,
+      borderWidth: 1.5,
+      backgroundColor: colors.bgInput,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    alarmBadgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+    },
+    alarmInfo: {
+      flex: 1,
+      minWidth: 0,
+    },
+    alarmMessage: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      fontWeight: '500',
+    },
+    alarmTime: {
+      ...typography.label,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    sensorSummary: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingVertical: 8,
+      marginBottom: 6,
+    },
+    sensorSummaryItem: {
+      ...typography.formSubheader,
+      fontWeight: '600',
+    },
+    summaryActive: {
+      color: colors.success,
+    },
+    summaryInactive: {
+      color: colors.textMuted,
+    },
+    summaryDivider: {
+      color: colors.borderHover,
+    },
+    sensorItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingVertical: 10,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSubtle,
+    },
+    sensorDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    sensorName: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      flex: 1,
+    },
+    sensorStatus: {
+      ...typography.label,
+      fontWeight: '600',
+    },
+    loaderBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      paddingVertical: 16,
+    },
+    loaderText: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+    },
+    emptyText: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      textAlign: 'center',
+      paddingVertical: 16,
+    },
+    cameraGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    cameraCard: {
+      flexBasis: '48%',
+      flexGrow: 1,
+      backgroundColor: colors.bgCard,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.input,
+      padding: 12,
+      gap: 4,
+    },
+    cameraIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: 10,
+      borderWidth: 1.5,
+      backgroundColor: colors.bgSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 6,
+    },
+    cameraIconText: {
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+    },
+    cameraName: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      fontWeight: '600',
+    },
+    cameraMeta: {
+      ...typography.label,
+      color: colors.textMuted,
+    },
+    cameraStatus: {
+      ...typography.label,
+      fontWeight: '600',
+      marginTop: 2,
+    },
+  });

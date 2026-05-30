@@ -14,7 +14,8 @@ import {
   type Alarm,
   type AlarmType,
 } from '../contexts/NotificationsContext';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 
 /* ===== Tipovi i konstante ===== */
@@ -125,6 +126,8 @@ function VerticalBarChart({
   selectedIdx: number | null;
   onSelect: (i: number | null) => void;
 }) {
+  const { colors } = useTheme();
+  const chartStyles = useThemedStyles(makeChartStyles);
   const max = Math.max(...data.map((d) => d.broj), 1);
   const CHART_HEIGHT = 180;
 
@@ -187,6 +190,8 @@ function DonutChart({
   total: number;
   size?: number;
 }) {
+  const { colors } = useTheme();
+  const chartStyles = useThemedStyles(makeChartStyles);
   const strokeW = 24;
   const r = (size - strokeW) / 2;
   const cx = size / 2;
@@ -270,6 +275,7 @@ function HorizontalBarChart({
 }: {
   data: { kamera: string; broj: number }[];
 }) {
+  const chartStyles = useThemedStyles(makeChartStyles);
   const max = Math.max(...data.map((d) => d.broj), 1);
   return (
     <View style={chartStyles.hbarList}>
@@ -310,6 +316,7 @@ function StatKartica({
   vrijednost: string;
   boja?: string;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.statCard}>
       <Text style={[styles.statValue, boja ? { color: boja } : null]} numberOfLines={1}>
@@ -323,6 +330,7 @@ function StatKartica({
 /* ===== Glavna komponenta ===== */
 export function AnalyticsScreen() {
   const { alarms, isLoading } = useNotifications();
+  const styles = useThemedStyles(makeStyles);
   const [granularnost, setGranularnost] = useState<Granularnost>('dan');
   const [selectedBarIdx, setSelectedBarIdx] = useState<number | null>(null);
 
@@ -454,267 +462,269 @@ export function AnalyticsScreen() {
 }
 
 /* ===== Stylovi ===== */
-const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bgDeep },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-    gap: 14,
-  },
-  intro: { gap: 2 },
-  title: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-  },
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    scroll: { flex: 1, backgroundColor: colors.bgDeep },
+    content: {
+      padding: 16,
+      paddingBottom: 32,
+      gap: 14,
+    },
+    intro: { gap: 2 },
+    title: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+    },
 
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  statCard: {
-    flexGrow: 1,
-    flexBasis: '47%',
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    gap: 4,
-  },
-  statValue: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 18,
-  },
-  statLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontSize: 11,
-    letterSpacing: 0.4,
-    textAlign: 'center',
-  },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    statCard: {
+      flexGrow: 1,
+      flexBasis: '47%',
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      alignItems: 'center',
+      gap: 4,
+    },
+    statValue: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 18,
+    },
+    statLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 11,
+      letterSpacing: 0.4,
+      textAlign: 'center',
+    },
 
-  card: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    padding: 16,
-    gap: 12,
-  },
-  cardHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardTitle: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 15,
-  },
+    card: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      padding: 16,
+      gap: 12,
+    },
+    cardHead: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    cardTitle: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 15,
+    },
 
-  toggleGroup: {
-    flexDirection: 'row',
-    gap: 6,
-    backgroundColor: colors.bgInput,
-    borderRadius: radius.input,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  toggleBtn: {
-    flex: 1,
-    paddingVertical: 7,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  toggleBtnActive: {
-    backgroundColor: colors.accent,
-  },
-  toggleBtnPressed: {
-    backgroundColor: colors.bgSurface,
-  },
-  toggleText: {
-    ...typography.label,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  toggleTextActive: {
-    color: colors.bgDeep,
-    fontWeight: '700',
-  },
+    toggleGroup: {
+      flexDirection: 'row',
+      gap: 6,
+      backgroundColor: colors.bgInput,
+      borderRadius: radius.input,
+      padding: 4,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    toggleBtn: {
+      flex: 1,
+      paddingVertical: 7,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    toggleBtnActive: {
+      backgroundColor: colors.accent,
+    },
+    toggleBtnPressed: {
+      backgroundColor: colors.bgSurface,
+    },
+    toggleText: {
+      ...typography.label,
+      color: colors.textSecondary,
+      fontWeight: '600',
+    },
+    toggleTextActive: {
+      color: colors.bgDeep,
+      fontWeight: '700',
+    },
 
-  selectedInfo: {
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accentGlow,
-    borderRadius: radius.input,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  selectedInfoLabel: {
-    ...typography.label,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  selectedInfoValue: {
-    ...typography.formSubheader,
-    color: colors.accent,
-    fontWeight: '700',
-  },
+    selectedInfo: {
+      backgroundColor: colors.accentSoft,
+      borderWidth: 1,
+      borderColor: colors.accentGlow,
+      borderRadius: radius.input,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    selectedInfoLabel: {
+      ...typography.label,
+      color: colors.textSecondary,
+      fontWeight: '600',
+    },
+    selectedInfoValue: {
+      ...typography.formSubheader,
+      color: colors.accent,
+      fontWeight: '700',
+    },
 
-  chartEmpty: {
-    ...typography.formSubheader,
-    color: colors.textMuted,
-    textAlign: 'center',
-    paddingVertical: 20,
-  },
-  hint: {
-    ...typography.label,
-    color: colors.textMuted,
-    textAlign: 'center',
-    fontSize: 10,
-    fontStyle: 'italic',
-  },
+    chartEmpty: {
+      ...typography.formSubheader,
+      color: colors.textMuted,
+      textAlign: 'center',
+      paddingVertical: 20,
+    },
+    hint: {
+      ...typography.label,
+      color: colors.textMuted,
+      textAlign: 'center',
+      fontSize: 10,
+      fontStyle: 'italic',
+    },
 
-  donutWrap: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  legend: {
-    gap: 6,
-    marginTop: 4,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 4,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendName: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  legendValue: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-});
+    donutWrap: {
+      alignItems: 'center',
+      paddingVertical: 8,
+    },
+    legend: {
+      gap: 6,
+      marginTop: 4,
+    },
+    legendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingVertical: 4,
+    },
+    legendDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    legendName: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      flex: 1,
+    },
+    legendValue: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontWeight: '600',
+    },
+  });
 
-const chartStyles = StyleSheet.create({
-  barWrap: {
-    position: 'relative',
-    paddingTop: 4,
-    paddingBottom: 4,
-  },
-  gridLines: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 4,
-    height: 180,
-  },
-  gridLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-  },
-  barChartBody: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  barCol: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  bar: {
-    width: '85%',
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-  },
-  barLabels: {
-    flexDirection: 'row',
-    marginTop: 6,
-    gap: 4,
-  },
-  barLabel: {
-    flex: 1,
-    ...typography.label,
-    color: colors.textMuted,
-    fontSize: 9,
-    textAlign: 'center',
-  },
+const makeChartStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    barWrap: {
+      position: 'relative',
+      paddingTop: 4,
+      paddingBottom: 4,
+    },
+    gridLines: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 4,
+      height: 180,
+    },
+    gridLine: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      height: 1,
+      backgroundColor: colors.borderSubtle,
+    },
+    barChartBody: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: 4,
+    },
+    barCol: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+    },
+    bar: {
+      width: '85%',
+      borderTopLeftRadius: 4,
+      borderTopRightRadius: 4,
+    },
+    barLabels: {
+      flexDirection: 'row',
+      marginTop: 6,
+      gap: 4,
+    },
+    barLabel: {
+      flex: 1,
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 9,
+      textAlign: 'center',
+    },
 
-  donutCenter: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  donutTotal: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 22,
-  },
-  donutLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    fontSize: 10,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
+    donutCenter: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    donutTotal: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 22,
+    },
+    donutLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 10,
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+    },
 
-  hbarList: {
-    gap: 8,
-  },
-  hbarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  hbarName: {
-    ...typography.label,
-    color: colors.textSecondary,
-    fontSize: 11,
-    width: 100,
-  },
-  hbarTrack: {
-    flex: 1,
-    height: 16,
-    backgroundColor: colors.bgInput,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  hbarFill: {
-    height: '100%',
-    borderRadius: 8,
-  },
-  hbarValue: {
-    ...typography.label,
-    color: colors.textSecondary,
-    fontWeight: '700',
-    fontSize: 12,
-    minWidth: 22,
-    textAlign: 'right',
-  },
-});
+    hbarList: {
+      gap: 8,
+    },
+    hbarRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    hbarName: {
+      ...typography.label,
+      color: colors.textSecondary,
+      fontSize: 11,
+      width: 100,
+    },
+    hbarTrack: {
+      flex: 1,
+      height: 16,
+      backgroundColor: colors.bgInput,
+      borderRadius: 8,
+      overflow: 'hidden',
+    },
+    hbarFill: {
+      height: '100%',
+      borderRadius: 8,
+    },
+    hbarValue: {
+      ...typography.label,
+      color: colors.textSecondary,
+      fontWeight: '700',
+      fontSize: 12,
+      minWidth: 22,
+      textAlign: 'right',
+    },
+  });

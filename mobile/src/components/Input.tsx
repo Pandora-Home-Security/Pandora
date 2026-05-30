@@ -8,7 +8,8 @@ import {
   type TextInputProps,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 
 type IconName = 'mail' | 'user' | 'lock' | 'lock-confirm';
@@ -20,6 +21,8 @@ type Props = TextInputProps & {
 };
 
 export function Input({ label, icon, isPassword = false, ...inputProps }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [focused, setFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -119,43 +122,44 @@ function EyeIcon({ visible, color }: { visible: boolean; color: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  field: {
-    marginBottom: 16,
-  },
-  label: {
-    ...typography.label,
-    color: colors.textSecondary,
-    marginBottom: 6,
-  },
-  inputBox: {
-    position: 'relative',
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.input,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  inputBoxFocused: {
-    borderColor: colors.accent,
-  },
-  leftIcon: {
-    paddingLeft: 14,
-    paddingRight: 8,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    color: colors.textPrimary,
-    ...typography.input,
-  },
-  inputWithIcon: {
-    paddingLeft: 0,
-  },
-  toggle: {
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    field: {
+      marginBottom: 16,
+    },
+    label: {
+      ...typography.label,
+      color: colors.textSecondary,
+      marginBottom: 6,
+    },
+    inputBox: {
+      position: 'relative',
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.input,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    inputBoxFocused: {
+      borderColor: colors.accent,
+    },
+    leftIcon: {
+      paddingLeft: 14,
+      paddingRight: 8,
+    },
+    input: {
+      flex: 1,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      color: colors.textPrimary,
+      ...typography.input,
+    },
+    inputWithIcon: {
+      paddingLeft: 0,
+    },
+    toggle: {
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+    },
+  });

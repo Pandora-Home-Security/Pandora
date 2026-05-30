@@ -1,6 +1,7 @@
 import { Modal, View, Text, Pressable, StyleSheet, Share } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 
 type Props = {
@@ -10,6 +11,9 @@ type Props = {
 };
 
 export function ApiKeyModal({ visible, apiKey, onClose }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const handleShare = async () => {
     if (!apiKey) return;
     try {
@@ -74,91 +78,92 @@ export function ApiKeyModal({ visible, apiKey, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' },
-  center: { flex: 1, justifyContent: 'center', paddingHorizontal: 18 },
-  card: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  title: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  body: {
-    padding: 18,
-    gap: 12,
-  },
-  notice: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  mono: {
-    fontFamily: 'monospace',
-    color: colors.accent,
-    fontSize: 12,
-  },
-  keyBox: {
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.accentGlow,
-    borderRadius: radius.input,
-    padding: 12,
-  },
-  keyText: {
-    fontFamily: 'monospace',
-    color: colors.accent,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-    padding: 18,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
-  },
-  btn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: radius.button,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnPrimary: { backgroundColor: colors.accent },
-  btnCancel: {
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  btnPressed: { opacity: 0.85 },
-  btnPrimaryText: {
-    ...typography.button,
-    color: colors.bgDeep,
-  },
-  btnCancelText: {
-    ...typography.button,
-    color: colors.textPrimary,
-    fontSize: 14,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    backdrop: { flex: 1, backgroundColor: colors.overlayMedium },
+    center: { flex: 1, justifyContent: 'center', paddingHorizontal: 18 },
+    card: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      overflow: 'hidden',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderSubtle,
+    },
+    title: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 16,
+    },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    body: {
+      padding: 18,
+      gap: 12,
+    },
+    notice: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    mono: {
+      fontFamily: 'monospace',
+      color: colors.accent,
+      fontSize: 12,
+    },
+    keyBox: {
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.accentGlow,
+      borderRadius: radius.input,
+      padding: 12,
+    },
+    keyText: {
+      fontFamily: 'monospace',
+      color: colors.accent,
+      fontSize: 12,
+      lineHeight: 18,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 10,
+      padding: 18,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSubtle,
+    },
+    btn: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: radius.button,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    btnPrimary: { backgroundColor: colors.accent },
+    btnCancel: {
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    btnPressed: { opacity: 0.85 },
+    btnPrimaryText: {
+      ...typography.button,
+      color: colors.bgDeep,
+    },
+    btnCancelText: {
+      ...typography.button,
+      color: colors.textPrimary,
+      fontSize: 14,
+    },
+  });

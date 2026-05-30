@@ -1,10 +1,11 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import Svg, { Path } from 'react-native-svg';
-import { colors } from '../theme/colors';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { typography } from '../theme/typography';
 import { clearAuthSession, getAuthUser } from '../lib/auth';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import type { ColorPalette } from '../theme/colors';
 import type { RootStackNavigation } from '../navigation/RootStack';
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
 
 export function AppHeader({ title, onMenuPress }: Props) {
   const rootNav = useNavigation<RootStackNavigation>();
+  const { theme, toggleTheme, colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const user = getAuthUser();
 
   const handleLogout = () => {
@@ -37,6 +40,23 @@ export function AppHeader({ title, onMenuPress }: Props) {
         </Text>
 
         <View style={styles.right}>
+          <Pressable
+            onPress={toggleTheme}
+            hitSlop={10}
+            style={styles.iconBtn}
+            accessibilityLabel={theme === 'dark' ? 'Uključi svijetlu temu' : 'Uključi tamnu temu'}
+          >
+            {theme === 'dark' ? (
+              <Svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke={colors.textPrimary} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <Circle cx={12} cy={12} r={4} />
+                <Path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+              </Svg>
+            ) : (
+              <Svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke={colors.textPrimary} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </Svg>
+            )}
+          </Pressable>
           {user?.ime && (
             <View style={styles.greetingWrap}>
               <Text style={styles.greetingLabel}>Pozdrav,</Text>
@@ -65,47 +85,48 @@ export function AppHeader({ title, onMenuPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    backgroundColor: colors.bgSurface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  header: {
-    height: 56,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  right: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  greetingWrap: {
-    alignItems: 'flex-end',
-    maxWidth: 120,
-  },
-  greetingLabel: {
-    fontSize: 10,
-    color: colors.textMuted,
-    letterSpacing: 0.3,
-  },
-  greetingName: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.accent,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    safe: {
+      backgroundColor: colors.bgSurface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderSubtle,
+    },
+    header: {
+      height: 56,
+      paddingHorizontal: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    iconBtn: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      flex: 1,
+    },
+    right: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    greetingWrap: {
+      alignItems: 'flex-end',
+      maxWidth: 120,
+    },
+    greetingLabel: {
+      fontSize: 10,
+      color: colors.textMuted,
+      letterSpacing: 0.3,
+    },
+    greetingName: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.accent,
+    },
+  });

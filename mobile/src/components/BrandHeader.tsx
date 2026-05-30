@@ -1,9 +1,13 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import type { ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 
 export function BrandHeader() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.container}>
       <View style={styles.shieldWrap}>
@@ -34,28 +38,29 @@ export function BrandHeader() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  shieldWrap: {
-    marginBottom: 12,
-  },
-  title: {
-    ...typography.brandTitle,
-    color: colors.textPrimary,
-  },
-  divider: {
-    width: 36,
-    height: 2,
-    backgroundColor: colors.accent,
-    opacity: 0.7,
-    borderRadius: 2,
-    marginVertical: 10,
-  },
-  tagline: {
-    ...typography.brandTagline,
-    color: colors.textSecondary,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    shieldWrap: {
+      marginBottom: 12,
+    },
+    title: {
+      ...typography.brandTitle,
+      color: colors.textPrimary,
+    },
+    divider: {
+      width: 36,
+      height: 2,
+      backgroundColor: colors.accent,
+      opacity: 0.7,
+      borderRadius: 2,
+      marginVertical: 10,
+    },
+    tagline: {
+      ...typography.brandTagline,
+      color: colors.textSecondary,
+    },
+  });

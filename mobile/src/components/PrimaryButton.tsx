@@ -1,7 +1,8 @@
 import { Pressable, Text, ActivityIndicator, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 
 type Props = {
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export function PrimaryButton({ label, onPress, loading = false, disabled = false }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const isDisabled = disabled || loading;
 
   return (
@@ -45,31 +48,32 @@ export function PrimaryButton({ label, onPress, loading = false, disabled = fals
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    borderRadius: radius.button,
-    overflow: 'hidden',
-    marginTop: 8,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-  gradient: {
-    minHeight: 50,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disabled: {
-    opacity: 0.55,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  label: {
-    ...typography.button,
-    color: colors.bgDeep,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    wrap: {
+      borderRadius: radius.button,
+      overflow: 'hidden',
+      marginTop: 8,
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+    gradient: {
+      minHeight: 50,
+      paddingHorizontal: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    disabled: {
+      opacity: 0.55,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    label: {
+      ...typography.button,
+      color: colors.bgDeep,
+    },
+  });

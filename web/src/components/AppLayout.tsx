@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getAuthToken, clearAuthToken } from '../lib/auth';
 import { useNotifications } from '../contexts/NotificationsContext';
+import { useTheme } from '../contexts/ThemeContext';
 import './AppLayout.css';
 
 /** Dekodira ime korisnika iz JWT payload-a. */
@@ -31,6 +32,7 @@ function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const userName = getUserName();
   const { unreadCount } = useNotifications();
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     clearAuthToken();
@@ -143,6 +145,26 @@ function AppLayout() {
           </button>
 
           <div className="header-spacer" />
+
+          {/* Theme toggle — sun/moon prebacuje light/dark */}
+          <button
+            type="button"
+            className="header-theme-btn"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Uključi svijetlu temu' : 'Uključi tamnu temu'}
+            title={theme === 'dark' ? 'Svijetla tema' : 'Tamna tema'}
+          >
+            {theme === 'dark' ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
 
           {/* Zvonce s brojem nepročitanih — vidljivo na mobitelu kad je sidebar skriven */}
           <button

@@ -18,7 +18,8 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
 import { LoadingState, ErrorState } from '../components/DataStates';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import type { RootStackParamList, RootStackNavigation } from '../navigation/RootStack';
 
@@ -53,6 +54,8 @@ function formatLastSeen(isoDate: string) {
 export function CameraDetailScreen({ route }: Props) {
   const { id } = route.params;
   const navigation = useNavigation<RootStackNavigation>();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
 
   const [camera, setCamera] = useState<Camera | null>(null);
   const [loading, setLoading] = useState(true);
@@ -358,6 +361,8 @@ function VideoPlayer({
   onEnterFullscreen,
   onExitFullscreen,
 }: VideoPlayerProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.player, fullscreen && styles.playerFullscreen]}>
       {/* Feed ili offline */}
@@ -509,6 +514,7 @@ function DetailRow({
   mono?: boolean;
   renderValue?: () => React.ReactNode;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
@@ -524,6 +530,7 @@ function DetailRow({
 }
 
 function ActionBtn({ label }: { label: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.actionBtn}>
       <Text style={styles.actionBtnText}>{label}</Text>
@@ -533,326 +540,327 @@ function ActionBtn({ label }: { label: string }) {
 
 /* ======== Styles ======== */
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bgDeep },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-    gap: 14,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    padding: 24,
-    backgroundColor: colors.bgDeep,
-  },
-  loaderText: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-  },
-  errorText: {
-    ...typography.formSubheader,
-    color: colors.errorText,
-    textAlign: 'center',
-  },
-  backFallbackBtn: {
-    marginTop: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: radius.button,
-    backgroundColor: colors.accent,
-  },
-  backFallbackText: {
-    ...typography.button,
-    color: colors.bgDeep,
-  },
-  detailTopBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap',
-  },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-  },
-  backText: {
-    ...typography.link,
-    color: colors.accent,
-  },
-  crudActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  crudBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.button,
-    borderWidth: 1,
-  },
-  crudBtnEdit: {
-    backgroundColor: colors.bgSurface,
-    borderColor: colors.borderSubtle,
-  },
-  crudBtnDelete: {
-    backgroundColor: colors.errorBg,
-    borderColor: colors.errorBorder,
-  },
-  crudBtnPressed: { opacity: 0.75 },
-  crudBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    scroll: { flex: 1, backgroundColor: colors.bgDeep },
+    content: {
+      padding: 16,
+      paddingBottom: 32,
+      gap: 14,
+    },
+    centered: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+      padding: 24,
+      backgroundColor: colors.bgDeep,
+    },
+    loaderText: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+    },
+    errorText: {
+      ...typography.formSubheader,
+      color: colors.errorText,
+      textAlign: 'center',
+    },
+    backFallbackBtn: {
+      marginTop: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: radius.button,
+      backgroundColor: colors.accent,
+    },
+    backFallbackText: {
+      ...typography.button,
+      color: colors.bgDeep,
+    },
+    detailTopBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 10,
+      flexWrap: 'wrap',
+    },
+    backBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 4,
+    },
+    backText: {
+      ...typography.link,
+      color: colors.accent,
+    },
+    crudActions: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    crudBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: radius.button,
+      borderWidth: 1,
+    },
+    crudBtnEdit: {
+      backgroundColor: colors.bgSurface,
+      borderColor: colors.borderSubtle,
+    },
+    crudBtnDelete: {
+      backgroundColor: colors.errorBg,
+      borderColor: colors.errorBorder,
+    },
+    crudBtnPressed: { opacity: 0.75 },
+    crudBtnText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
 
-  // Player
-  player: {
-    aspectRatio: 16 / 9,
-    backgroundColor: '#05070d',
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  playerFullscreen: {
-    flex: 1,
-    aspectRatio: undefined,
-    borderRadius: 0,
-    borderWidth: 0,
-    width: '100%',
-    height: '100%',
-  },
-  feed: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0a1220',
-  },
-  offlineWrap: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 24,
-  },
-  offlineTitle: {
-    ...typography.formHeader,
-    color: colors.textSecondary,
-    fontSize: 16,
-    marginTop: 6,
-  },
-  offlineSub: {
-    ...typography.label,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  topBar: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    right: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: colors.error,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.textPrimary,
-  },
-  liveText: {
-    color: colors.textPrimary,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  resBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  resText: {
-    color: colors.textPrimary,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  timestamp: {
-    position: 'absolute',
-    bottom: 60,
-    left: 10,
-    right: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  tsName: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    opacity: 0.85,
-    flex: 1,
-    marginRight: 8,
-  },
-  tsTime: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    fontVariant: ['tabular-nums'],
-    opacity: 0.85,
-  },
-  pausedOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  pausedText: {
-    color: colors.textPrimary,
-    ...typography.formSubheader,
-  },
-  controls: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  controlsLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  controlsRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  ctrlBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  ctrlBtnPressed: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-  },
-  statusText: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '600',
-  },
+    // Player
+    player: {
+      aspectRatio: 16 / 9,
+      backgroundColor: '#05070d',
+      borderRadius: radius.card,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      overflow: 'hidden',
+      position: 'relative',
+    },
+    playerFullscreen: {
+      flex: 1,
+      aspectRatio: undefined,
+      borderRadius: 0,
+      borderWidth: 0,
+      width: '100%',
+      height: '100%',
+    },
+    feed: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#0a1220',
+    },
+    offlineWrap: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingHorizontal: 24,
+    },
+    offlineTitle: {
+      ...typography.formHeader,
+      color: colors.textSecondary,
+      fontSize: 16,
+      marginTop: 6,
+    },
+    offlineSub: {
+      ...typography.label,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    topBar: {
+      position: 'absolute',
+      top: 10,
+      left: 10,
+      right: 10,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    liveBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      backgroundColor: colors.error,
+    },
+    liveDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.textPrimary,
+    },
+    liveText: {
+      color: colors.textPrimary,
+      fontSize: 11,
+      fontWeight: '800',
+      letterSpacing: 0.8,
+    },
+    resBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    resText: {
+      color: colors.textPrimary,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    timestamp: {
+      position: 'absolute',
+      bottom: 60,
+      left: 10,
+      right: 10,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    tsName: {
+      color: colors.textPrimary,
+      fontSize: 12,
+      opacity: 0.85,
+      flex: 1,
+      marginRight: 8,
+    },
+    tsTime: {
+      color: colors.textPrimary,
+      fontSize: 12,
+      fontVariant: ['tabular-nums'],
+      opacity: 0.85,
+    },
+    pausedOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    pausedText: {
+      color: colors.textPrimary,
+      ...typography.formSubheader,
+    },
+    controls: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.55)',
+    },
+    controlsLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    controlsRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    ctrlBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(255,255,255,0.08)',
+    },
+    ctrlBtnPressed: {
+      backgroundColor: 'rgba(255,255,255,0.18)',
+    },
+    statusText: {
+      color: colors.textPrimary,
+      fontSize: 12,
+      fontWeight: '600',
+    },
 
-  // Panels
-  panel: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    padding: 16,
-  },
-  panelTitle: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-    marginVertical: 12,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    gap: 12,
-  },
-  detailLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  detailValue: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    fontWeight: '500',
-    maxWidth: '65%',
-    textAlign: 'right',
-  },
-  mono: {
-    fontFamily: 'monospace',
-  },
-  statusWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexShrink: 0,
-  },
-  detailStatusText: {
-    ...typography.formSubheader,
-    fontWeight: '500',
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  actionBtn: {
-    flexGrow: 1,
-    flexBasis: '47%',
-    paddingVertical: 12,
-    borderRadius: radius.input,
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    alignItems: 'center',
-    opacity: 0.6,
-  },
-  actionBtnText: {
-    ...typography.label,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  actionsNote: {
-    ...typography.label,
-    color: colors.textMuted,
-    marginTop: 10,
-    fontStyle: 'italic',
-  },
+    // Panels
+    panel: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      padding: 16,
+    },
+    panelTitle: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 16,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.borderSubtle,
+      marginVertical: 12,
+    },
+    detailRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+      gap: 12,
+    },
+    detailLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+    },
+    detailValue: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      fontWeight: '500',
+      maxWidth: '65%',
+      textAlign: 'right',
+    },
+    mono: {
+      fontFamily: 'monospace',
+    },
+    statusWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      flexShrink: 0,
+    },
+    detailStatusText: {
+      ...typography.formSubheader,
+      fontWeight: '500',
+    },
+    statusDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    actionsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    actionBtn: {
+      flexGrow: 1,
+      flexBasis: '47%',
+      paddingVertical: 12,
+      borderRadius: radius.input,
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      alignItems: 'center',
+      opacity: 0.6,
+    },
+    actionBtnText: {
+      ...typography.label,
+      color: colors.textSecondary,
+      fontWeight: '600',
+    },
+    actionsNote: {
+      ...typography.label,
+      color: colors.textMuted,
+      marginTop: 10,
+      fontStyle: 'italic',
+    },
 
-  fullscreenRoot: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-});
+    fullscreenRoot: {
+      flex: 1,
+      backgroundColor: '#000',
+    },
+  });

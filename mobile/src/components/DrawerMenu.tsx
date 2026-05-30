@@ -12,8 +12,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
-import { colors, radius } from '../theme/colors';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
 import { useNotifications } from '../contexts/NotificationsContext';
 import type { RootStackParamList, RootStackNavigation } from '../navigation/RootStack';
 
@@ -75,6 +76,8 @@ export function DrawerMenu({ visible, onClose }: Props) {
   const navigation = useNavigation<RootStackNavigation>();
   const insets = useSafeAreaInsets();
   const { unreadCount } = useNotifications();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const activeRoute = useNavigationState((state) =>
     state ? state.routes[state.index]?.name : undefined
   );
@@ -220,97 +223,98 @@ export function DrawerMenu({ visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  drawer: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: colors.bgSurface,
-    borderRightWidth: 1,
-    borderRightColor: colors.borderSubtle,
-  },
-  safe: {
-    flex: 1,
-  },
-  brand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  brandText: {
-    ...typography.brandTitle,
-    color: colors.textPrimary,
-    fontSize: 22,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-    marginHorizontal: 12,
-    marginBottom: 8,
-  },
-  navScroll: {
-    flex: 1,
-  },
-  navContent: {
-    paddingHorizontal: 12,
-    paddingTop: 4,
-  },
-  navItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: radius.input,
-    marginBottom: 2,
-  },
-  navItemActive: {
-    backgroundColor: colors.accentSoft,
-  },
-  navItemPressed: {
-    backgroundColor: colors.bgInput,
-  },
-  navLabel: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-    flex: 1,
-    fontWeight: '500',
-  },
-  navLabelActive: {
-    color: colors.accent,
-    fontWeight: '600',
-  },
-  badge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.error,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
-  },
-  footerText: {
-    ...typography.label,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: colors.overlayMedium,
+    },
+    drawer: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      backgroundColor: colors.bgSurface,
+      borderRightWidth: 1,
+      borderRightColor: colors.borderSubtle,
+    },
+    safe: {
+      flex: 1,
+    },
+    brand: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    brandText: {
+      ...typography.brandTitle,
+      color: colors.textPrimary,
+      fontSize: 22,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.borderSubtle,
+      marginHorizontal: 12,
+      marginBottom: 8,
+    },
+    navScroll: {
+      flex: 1,
+    },
+    navContent: {
+      paddingHorizontal: 12,
+      paddingTop: 4,
+    },
+    navItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: radius.input,
+      marginBottom: 2,
+    },
+    navItemActive: {
+      backgroundColor: colors.accentSoft,
+    },
+    navItemPressed: {
+      backgroundColor: colors.bgInput,
+    },
+    navLabel: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+      flex: 1,
+      fontWeight: '500',
+    },
+    navLabelActive: {
+      color: colors.accent,
+      fontWeight: '600',
+    },
+    badge: {
+      minWidth: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: colors.error,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 6,
+    },
+    badgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: '#ffffff',
+    },
+    footer: {
+      paddingHorizontal: 20,
+      paddingBottom: 8,
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSubtle,
+    },
+    footerText: {
+      ...typography.label,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+  });

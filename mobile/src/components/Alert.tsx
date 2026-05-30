@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 
 type Props = {
@@ -9,6 +10,8 @@ type Props = {
 };
 
 export function Alert({ variant, message }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const isError = variant === 'error';
 
   return (
@@ -53,19 +56,20 @@ export function Alert({ variant, message }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  box: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderRadius: radius.input,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 16,
-  },
-  text: {
-    ...typography.alert,
-    flex: 1,
-  },
-});
+const makeStyles = (_colors: ColorPalette) =>
+  StyleSheet.create({
+    box: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      borderWidth: 1,
+      borderRadius: radius.input,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      marginBottom: 16,
+    },
+    text: {
+      ...typography.alert,
+      flex: 1,
+    },
+  });

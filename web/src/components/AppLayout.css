@@ -177,6 +177,31 @@
   color: var(--text-secondary);
 }
 
+/* ===== Theme toggle u header-u ===== */
+.header-theme-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-theme-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.header-theme-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
 /* ===== Zvonce u header-u ===== */
 .header-bell-btn {
   position: relative;

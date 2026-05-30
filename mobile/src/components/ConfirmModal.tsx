@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { haptics } from '../lib/haptics';
 
@@ -33,6 +34,8 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleConfirm = async () => {
@@ -96,7 +99,7 @@ export function ConfirmModal({
                 ]}
               >
                 {isLoading ? (
-                  <ActivityIndicator color={danger ? colors.textPrimary : colors.bgDeep} />
+                  <ActivityIndicator color={danger ? '#ffffff' : colors.bgDeep} />
                 ) : (
                   <Text style={danger ? styles.btnDangerText : styles.btnPrimaryText}>
                     {confirmText}
@@ -111,85 +114,86 @@ export function ConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  card: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
-    padding: 22,
-    alignItems: 'center',
-    gap: 10,
-  },
-  iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.errorBg,
-    borderWidth: 1,
-    borderColor: colors.errorBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  title: {
-    ...typography.formHeader,
-    color: colors.textPrimary,
-    fontSize: 17,
-    textAlign: 'center',
-  },
-  message: {
-    ...typography.formSubheader,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-    width: '100%',
-    marginTop: 6,
-  },
-  btn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: radius.button,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnCancel: {
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  btnPrimary: {
-    backgroundColor: colors.accent,
-  },
-  btnDanger: {
-    backgroundColor: colors.error,
-  },
-  btnPressed: { opacity: 0.85 },
-  btnDisabled: { opacity: 0.5 },
-  btnCancelText: {
-    ...typography.button,
-    color: colors.textPrimary,
-    fontSize: 14,
-  },
-  btnPrimaryText: {
-    ...typography.button,
-    color: colors.bgDeep,
-  },
-  btnDangerText: {
-    ...typography.button,
-    color: colors.textPrimary,
-  },
-});
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: colors.overlayMedium,
+    },
+    center: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+    },
+    card: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      padding: 22,
+      alignItems: 'center',
+      gap: 10,
+    },
+    iconWrap: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.errorBg,
+      borderWidth: 1,
+      borderColor: colors.errorBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    title: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 17,
+      textAlign: 'center',
+    },
+    message: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 10,
+      width: '100%',
+      marginTop: 6,
+    },
+    btn: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: radius.button,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    btnCancel: {
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    btnPrimary: {
+      backgroundColor: colors.accent,
+    },
+    btnDanger: {
+      backgroundColor: colors.error,
+    },
+    btnPressed: { opacity: 0.85 },
+    btnDisabled: { opacity: 0.5 },
+    btnCancelText: {
+      ...typography.button,
+      color: colors.textPrimary,
+      fontSize: 14,
+    },
+    btnPrimaryText: {
+      ...typography.button,
+      color: colors.bgDeep,
+    },
+    btnDangerText: {
+      ...typography.button,
+      color: '#ffffff',
+    },
+  });

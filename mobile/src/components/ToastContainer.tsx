@@ -8,7 +8,8 @@ import {
   type Toast as ToastType,
   type AlarmType,
 } from '../contexts/NotificationsContext';
-import { colors, radius } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import type { RootStackNavigation } from '../navigation/RootStack';
 
@@ -41,6 +42,8 @@ const typeColors: Record<AlarmType, string> = {
 function Toast({ toast }: { toast: ToastType }) {
   const { dismissToast, markAsRead } = useNotifications();
   const navigation = useNavigation<RootStackNavigation>();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const slide = useRef(new Animated.Value(-120)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -161,6 +164,7 @@ export function ToastContainer() {
   );
 }
 
+// Statički stilovi za vanjski layout — ne ovise o temi.
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
@@ -175,100 +179,104 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     gap: 8,
   },
-  toast: {
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderLeftWidth: 4,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    // shadow
-    shadowColor: '#000',
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 12,
-  },
-  toastPressable: {
-    flexDirection: 'row',
-    padding: 12,
-    gap: 10,
-  },
-  badge: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    color: '#0a0c10',
-  },
-  body: {
-    flex: 1,
-    gap: 4,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  typeLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  camera: {
-    ...typography.label,
-    color: colors.textMuted,
-    flex: 1,
-  },
-  message: {
-    ...typography.formSubheader,
-    color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 6,
-  },
-  actionBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.input,
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  actionBtnRead: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accent,
-  },
-  actionBtnPressed: {
-    opacity: 0.7,
-  },
-  actionBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  actionBtnReadText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.accent,
-  },
-  closeBtn: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-  },
-  closeBtnPressed: {
-    backgroundColor: colors.bgInput,
-  },
 });
+
+const makeStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    toast: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderLeftWidth: 4,
+      borderRadius: radius.card,
+      overflow: 'hidden',
+      // shadow
+      shadowColor: '#000',
+      shadowOpacity: 0.5,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 12,
+    },
+    toastPressable: {
+      flexDirection: 'row',
+      padding: 12,
+      gap: 10,
+    },
+    badge: {
+      width: 36,
+      height: 36,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badgeText: {
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 0.5,
+      color: '#0a0c10',
+    },
+    body: {
+      flex: 1,
+      gap: 4,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    typeLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      letterSpacing: 0.3,
+    },
+    camera: {
+      ...typography.label,
+      color: colors.textMuted,
+      flex: 1,
+    },
+    message: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      fontWeight: '500',
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 8,
+      marginTop: 6,
+    },
+    actionBtn: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radius.input,
+      backgroundColor: colors.bgInput,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    actionBtnRead: {
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.accent,
+    },
+    actionBtnPressed: {
+      opacity: 0.7,
+    },
+    actionBtnText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    actionBtnReadText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.accent,
+    },
+    closeBtn: {
+      width: 28,
+      height: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 14,
+    },
+    closeBtnPressed: {
+      backgroundColor: colors.bgInput,
+    },
+  });
