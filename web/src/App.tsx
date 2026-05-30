@@ -7,7 +7,7 @@ import CameraDetailPage from './pages/CameraDetailPage';
 import AlarmsPage from './pages/AlarmsPage';
 import SensorsPage from './pages/SensorsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
-import PlaceholderPage from './pages/PlaceholderPage';
+import UsersPage from './pages/UsersPage';
 import AccountPage from './pages/AccountPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
@@ -31,7 +31,7 @@ function App() {
           <Route path="/senzori" element={<SensorsPage />} />
           <Route path="/alarmi" element={<AlarmsPage />} />
           <Route path="/analitika" element={<AnalyticsPage />} />
-          <Route path="/korisnici" element={<PlaceholderPage title="Upravljanje korisnicima" icon="👥" />} />
+          <Route path="/korisnici" element={<UsersPage />} />
           <Route path="/racun" element={<AccountPage />} />
         </Route>
       </Route>

@@ -21,17 +21,21 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 app.use(cors());
 app.use(express.json());
 
+type UserRole = 'admin' | 'korisnik';
+
 type StoredUser = {
   id: string;
   ime: string;
   email: string;
   password_hash: string;
+  role: UserRole;
 };
 
 type AuthTokenPayload = {
   sub: string;
   email: string;
   ime: string;
+  role: UserRole;
   exp: number;
 };
 
@@ -72,6 +76,9 @@ const verifyToken = (token: string): AuthTokenPayload | null => {
     if (!payload.sub || !payload.email || !payload.ime || !payload.exp) {
       return null;
     }
+    if (!payload.role) {
+      payload.role = 'korisnik';
+    }
 
     if (payload.exp <= Math.floor(Date.now() / 1000)) {
       return null;
@@ -88,6 +95,7 @@ const createAuthToken = (user: StoredUser) =>
     sub: user.id,
     email: user.email,
     ime: user.ime,
+    role: user.role,
     exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
   });
 
@@ -95,11 +103,12 @@ const sanitizeUser = (user: StoredUser) => ({
   id: user.id,
   ime: user.ime,
   email: user.email,
+  role: user.role,
 });
 
 const findUserByEmail = async (email: string): Promise<StoredUser | null> => {
   const result = await pool.query<StoredUser>(
-    'SELECT id::text AS id, ime, email, password_hash FROM users WHERE LOWER(email) = LOWER($1)',
+    'SELECT id::text AS id, ime, email, password_hash, role FROM users WHERE LOWER(email) = LOWER($1)',
     [email],
   );
   return result.rows[0] ?? null;
@@ -371,6 +380,90 @@ app.delete('/api/sensors/:id', authenticateRequest, async (req: AuthenticatedReq
   res.json({ message: 'Senzor uspješno obrisan.' });
 });
 
+/* ===== Admin middleware ===== */
+
+const requireAdmin = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ message: 'Samo administratori imaju pristup.' });
+  }
+  next();
+};
+
+/* ===== Admin CRUD korisnici ===== */
+
+app.get('/api/users', authenticateRequest, requireAdmin, async (_req: AuthenticatedRequest, res) => {
+  const result = await pool.query(
+    `SELECT id::text AS id, ime, email, role, created_at
+     FROM users ORDER BY created_at DESC`,
+  );
+  res.json({ users: result.rows });
+});
+
+app.post('/api/users/invite', authenticateRequest, requireAdmin, async (req: AuthenticatedRequest, res) => {
+  const { ime, email, password, role } = req.body ?? {};
+
+  if (!ime || typeof ime !== 'string' || !ime.trim()) {
+    return res.status(400).json({ message: 'Ime je obavezno.' });
+  }
+  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: 'Neispravna email adresa.' });
+  }
+  if (!password || typeof password !== 'string' || password.length < 8) {
+    return res.status(400).json({ message: 'Lozinka mora imati najmanje 8 znakova.' });
+  }
+
+  const userRole: UserRole = role === 'admin' ? 'admin' : 'korisnik';
+  const existing = await findUserByEmail(email.toLowerCase());
+  if (existing) {
+    return res.status(409).json({ message: 'Korisnik s tim emailom već postoji.' });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const result = await pool.query(
+    `INSERT INTO users (ime, email, password_hash, role)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id::text AS id, ime, email, role, created_at`,
+    [ime.trim(), email.toLowerCase(), passwordHash, userRole],
+  );
+
+  res.status(201).json({ message: 'Korisnik uspješno dodan.', user: result.rows[0] });
+});
+
+app.put('/api/users/:id/role', authenticateRequest, requireAdmin, async (req: AuthenticatedRequest, res) => {
+  const { role } = req.body ?? {};
+  if (!role || !['admin', 'korisnik'].includes(role)) {
+    return res.status(400).json({ message: 'Uloga mora biti admin ili korisnik.' });
+  }
+  if (req.params.id === req.user!.sub) {
+    return res.status(400).json({ message: 'Ne možete promijeniti vlastitu ulogu.' });
+  }
+
+  const result = await pool.query(
+    `UPDATE users SET role = $1 WHERE id = $2
+     RETURNING id::text AS id, ime, email, role, created_at`,
+    [role, req.params.id],
+  );
+  if (result.rows.length === 0) {
+    return res.status(404).json({ message: 'Korisnik nije pronađen.' });
+  }
+  res.json({ message: 'Uloga uspješno promijenjena.', user: result.rows[0] });
+});
+
+app.delete('/api/users/:id', authenticateRequest, requireAdmin, async (req: AuthenticatedRequest, res) => {
+  if (req.params.id === req.user!.sub) {
+    return res.status(400).json({ message: 'Ne možete obrisati vlastiti račun.' });
+  }
+  const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [req.params.id]);
+  if (result.rows.length === 0) {
+    return res.status(404).json({ message: 'Korisnik nije pronađen.' });
+  }
+  res.json({ message: 'Korisnik uspješno obrisan.' });
+});
+
 app.post('/api/auth/register', async (req, res) => {
   const { ime, email, password } = req.body ?? {};
 
@@ -396,9 +489,9 @@ app.post('/api/auth/register', async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 10);
 
   const result = await pool.query<StoredUser>(
-    `INSERT INTO users (ime, email, password_hash)
-     VALUES ($1, $2, $3)
-     RETURNING id::text AS id, ime, email, password_hash`,
+    `INSERT INTO users (ime, email, password_hash, role)
+     VALUES ($1, $2, $3, 'korisnik')
+     RETURNING id::text AS id, ime, email, password_hash, role`,
     [ime.trim(), emailKey, passwordHash],
   );
 
@@ -457,7 +550,7 @@ app.put('/api/auth/profile', authenticateRequest, async (req: AuthenticatedReque
 
   const result = await pool.query<StoredUser>(
     `UPDATE users SET ime = $1, email = $2 WHERE id = $3
-     RETURNING id::text AS id, ime, email, password_hash`,
+     RETURNING id::text AS id, ime, email, password_hash, role`,
     [ime.trim(), emailKey, req.user!.sub],
   );
 
@@ -481,7 +574,7 @@ app.put('/api/auth/password', authenticateRequest, async (req: AuthenticatedRequ
   }
 
   const result = await pool.query<StoredUser>(
-    'SELECT id::text AS id, ime, email, password_hash FROM users WHERE id = $1',
+    'SELECT id::text AS id, ime, email, password_hash, role FROM users WHERE id = $1',
     [req.user!.sub],
   );
 
