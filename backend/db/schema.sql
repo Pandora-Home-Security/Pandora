@@ -6,8 +6,19 @@ CREATE TABLE IF NOT EXISTS users (
     ime           TEXT NOT NULL,
     email         TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
+    role          TEXT NOT NULL DEFAULT 'korisnik' CHECK (role IN ('admin', 'korisnik')),
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migracija: dodaj role stupac ako ne postoji (za postojeće baze)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'role'
+  ) THEN
+    ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'korisnik' CHECK (role IN ('admin', 'korisnik'));
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS users_email_lower_idx ON users (LOWER(email));
 
