@@ -14,6 +14,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { haptics } from '../lib/haptics';
 
 export type CameraFormData = {
   name: string;
@@ -74,7 +75,9 @@ export function CameraFormModal({
         location: location.trim(),
         streamUrl: streamUrl.trim(),
       });
+      void haptics.success();
     } catch (err) {
+      void haptics.error();
       setError(err instanceof Error ? err.message : 'Došlo je do greške.');
     } finally {
       setIsSubmitting(false);

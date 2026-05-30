@@ -10,6 +10,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { haptics } from '../lib/haptics';
 
 type Props = {
   visible: boolean;
@@ -35,6 +36,7 @@ export function ConfirmModal({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleConfirm = async () => {
+    if (danger) void haptics.error();
     setIsLoading(true);
     try {
       await onConfirm();
