@@ -46,6 +46,8 @@ const labelGranularnosti: Record<Granularnost, string> = {
   mjesec: 'Po mjesecu',
 };
 
+const FILTER_SVE = 'sve';
+
 /* ===== Pomoćne funkcije za grupiranje po vremenu ===== */
 
 // Vrati početak razdoblja kojem datum pripada:
@@ -158,18 +160,55 @@ function AnalyticsPage() {
   const { alarms, isLoading } = useNotifications();
   const [granularnost, setGranularnost] = useState<Granularnost>('dan');
 
-  // Memoiziramo agregacije da se ne računaju ponovno na svaki render
-  const krozVrijeme = useMemo(() => podaciKrozVrijeme(alarms, granularnost), [alarms, granularnost]);
-  const poTipu = useMemo(() => podaciPoTipu(alarms), [alarms]);
-  const poKameri = useMemo(() => podaciPoKameri(alarms), [alarms]);
+  // Stanja filtera
+  const [datumOd, setDatumOd] = useState('');
+  const [datumDo, setDatumDo] = useState('');
+  const [filterKamera, setFilterKamera] = useState<string>(FILTER_SVE);
+  const [filterTip, setFilterTip] = useState<AlarmType | typeof FILTER_SVE>(FILTER_SVE);
 
-  const ukupno = alarms.length;
-  const neprocitano = alarms.filter((a) => !a.isRead).length;
+  // Popis kamera za dropdown — jedinstvene vrijednosti iz svih alarma, abecedno
+  const kamere = useMemo(
+    () => [...new Set(alarms.map((a) => a.camera))].sort((a, b) => a.localeCompare(b, 'hr')),
+    [alarms],
+  );
+
+  // Primijeni filtere na alarme prije svih agregacija
+  const filtrirani = useMemo(() => {
+    const od = datumOd ? new Date(`${datumOd}T00:00:00`).getTime() : null;
+    const doKraja = datumDo ? new Date(`${datumDo}T23:59:59.999`).getTime() : null;
+    return alarms.filter((a) => {
+      const t = new Date(a.time).getTime();
+      if (od !== null && t < od) return false;
+      if (doKraja !== null && t > doKraja) return false;
+      if (filterKamera !== FILTER_SVE && a.camera !== filterKamera) return false;
+      if (filterTip !== FILTER_SVE && a.type !== filterTip) return false;
+      return true;
+    });
+  }, [alarms, datumOd, datumDo, filterKamera, filterTip]);
+
+  const filteriAktivni =
+    datumOd !== '' || datumDo !== '' || filterKamera !== FILTER_SVE || filterTip !== FILTER_SVE;
+
+  const ocistiFiltere = () => {
+    setDatumOd('');
+    setDatumDo('');
+    setFilterKamera(FILTER_SVE);
+    setFilterTip(FILTER_SVE);
+  };
+
+  // Memoiziramo agregacije (na filtriranim podacima) da se ne računaju ponovno na svaki render
+  const krozVrijeme = useMemo(() => podaciKrozVrijeme(filtrirani, granularnost), [filtrirani, granularnost]);
+  const poTipu = useMemo(() => podaciPoTipu(filtrirani), [filtrirani]);
+  const poKameri = useMemo(() => podaciPoKameri(filtrirani), [filtrirani]);
+
+  const ukupnoSve = alarms.length;
+  const ukupno = filtrirani.length;
+  const neprocitano = filtrirani.filter((a) => !a.isRead).length;
   const najcesciTip = poTipu[0]?.naziv ?? '—';
   const najaktivnijaKamera = poKameri[0]?.kamera ?? '—';
 
   // Spinner samo pri prvom učitavanju (dok kontekst još nema podataka)
-  if (isLoading && ukupno === 0) {
+  if (isLoading && ukupnoSve === 0) {
     return (
       <div className="analytics-loading">
         <div className="analytics-spinner" />
@@ -185,7 +224,7 @@ function AnalyticsPage() {
         <p className="analytics-subtitle">Vizualni prikaz statistike i trendova alarma</p>
       </div>
 
-      {ukupno === 0 ? (
+      {ukupnoSve === 0 ? (
         <div className="analytics-empty">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="analytics-empty-icon">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -194,117 +233,202 @@ function AnalyticsPage() {
         </div>
       ) : (
         <>
-          {/* Sažetak u stat karticama */}
-          <div className="analytics-stats">
-            <StatKartica naziv="Ukupno alarma" vrijednost={String(ukupno)} />
-            <StatKartica naziv="Nepročitano" vrijednost={String(neprocitano)} boja="#fb923c" />
-            <StatKartica naziv="Najčešći tip" vrijednost={najcesciTip} />
-            <StatKartica naziv="Najaktivnija kamera" vrijednost={najaktivnijaKamera} />
-          </div>
-
-          {/* Graf 1 — broj alarma kroz vrijeme (s preklopnikom granularnosti) */}
-          <section className="analytics-card">
-            <div className="analytics-card-head">
-              <h3 className="analytics-card-title">Broj alarma kroz vrijeme</h3>
-              <div className="analytics-toggle" role="group" aria-label="Granularnost prikaza">
-                {(['dan', 'tjedan', 'mjesec'] as const).map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    className={`analytics-toggle-btn ${granularnost === g ? 'analytics-toggle-btn-active' : ''}`}
-                    aria-pressed={granularnost === g}
-                    onClick={() => setGranularnost(g)}
-                  >
-                    {labelGranularnosti[g]}
-                  </button>
-                ))}
-              </div>
+          {/* Filteri — vremenski raspon, kamera i tip alarma */}
+          <section className="analytics-filters">
+            <div className="analytics-filter-group">
+              <label className="analytics-filter-label" htmlFor="filter-od">Datum od</label>
+              <input
+                id="filter-od"
+                type="date"
+                className="analytics-filter-input"
+                value={datumOd}
+                max={datumDo || undefined}
+                onChange={(e) => setDatumOd(e.target.value)}
+              />
             </div>
-            <div
-              role="img"
-              aria-label={`Stupčasti graf broja alarma kroz vrijeme, prikaz ${labelGranularnosti[granularnost].toLowerCase()}. Ukupno ${ukupno} alarma.`}
-            >
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={krozVrijeme} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
-                  <XAxis dataKey="oznaka" stroke={GRID} tick={{ fill: OS_TEKST, fontSize: 12 }} tickLine={false} />
-                  <YAxis allowDecimals={false} stroke={GRID} tick={{ fill: OS_TEKST, fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-                  <Bar dataKey="broj" name="Broj alarma" fill={ACCENT} radius={[6, 6, 0, 0]} maxBarSize={48} />
-                </BarChart>
-              </ResponsiveContainer>
+
+            <div className="analytics-filter-group">
+              <label className="analytics-filter-label" htmlFor="filter-do">Datum do</label>
+              <input
+                id="filter-do"
+                type="date"
+                className="analytics-filter-input"
+                value={datumDo}
+                min={datumOd || undefined}
+                onChange={(e) => setDatumDo(e.target.value)}
+              />
+            </div>
+
+            <div className="analytics-filter-group">
+              <label className="analytics-filter-label" htmlFor="filter-kamera">Kamera</label>
+              <select
+                id="filter-kamera"
+                className="analytics-filter-select"
+                value={filterKamera}
+                onChange={(e) => setFilterKamera(e.target.value)}
+              >
+                <option value={FILTER_SVE}>Sve kamere</option>
+                {kamere.map((k) => (
+                  <option key={k} value={k}>{k}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="analytics-filter-group">
+              <label className="analytics-filter-label" htmlFor="filter-tip">Tip alarma</label>
+              <select
+                id="filter-tip"
+                className="analytics-filter-select"
+                value={filterTip}
+                onChange={(e) => setFilterTip(e.target.value as AlarmType | typeof FILTER_SVE)}
+              >
+                <option value={FILTER_SVE}>Svi tipovi</option>
+                {(Object.keys(nazivTipa) as AlarmType[]).map((t) => (
+                  <option key={t} value={t}>{nazivTipa[t]}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="analytics-filter-actions">
+              {filteriAktivni && (
+                <button type="button" className="analytics-filter-reset" onClick={ocistiFiltere}>
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M4.755 10.059a7.5 7.5 0 0112.548-3.364l1.903 1.903h-3.183a.75.75 0 100 1.5h4.992a.75.75 0 00.75-.75V4.356a.75.75 0 00-1.5 0v3.18l-1.9-1.9A9 9 0 003.306 9.67a.75.75 0 101.45.388zm15.408 3.352a.75.75 0 00-.919.53 7.5 7.5 0 01-12.548 3.364l-1.902-1.903h3.183a.75.75 0 000-1.5H2.984a.75.75 0 00-.75.75v4.992a.75.75 0 001.5 0v-3.18l1.9 1.9a9 9 0 0015.059-4.035.75.75 0 00-.53-.918z" clipRule="evenodd" />
+                  </svg>
+                  Očisti filtere
+                </button>
+              )}
+              <span className="analytics-filter-summary">
+                Prikazano <strong>{ukupno}</strong> {ukupno === 1 ? 'alarm' : 'alarma'} od {ukupnoSve}
+              </span>
             </div>
           </section>
 
-          {/* Donji red — raspodjela po tipu + aktivnost po kameri */}
-          <div className="analytics-grid">
-            {/* Graf 2 — raspodjela po tipu (pie) */}
-            <section className="analytics-card">
-              <h3 className="analytics-card-title">Raspodjela po tipu</h3>
-              <div className="analytics-pie-wrap">
+          {ukupno === 0 ? (
+            <div className="analytics-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="analytics-empty-icon">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <p>Nema alarma koji odgovaraju odabranim filterima.</p>
+              <button type="button" className="analytics-filter-reset" onClick={ocistiFiltere}>
+                Očisti filtere
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Sažetak u stat karticama */}
+              <div className="analytics-stats">
+                <StatKartica naziv="Ukupno alarma" vrijednost={String(ukupno)} />
+                <StatKartica naziv="Nepročitano" vrijednost={String(neprocitano)} boja="#fb923c" />
+                <StatKartica naziv="Najčešći tip" vrijednost={najcesciTip} />
+                <StatKartica naziv="Najaktivnija kamera" vrijednost={najaktivnijaKamera} />
+              </div>
+
+              {/* Graf 1 — broj alarma kroz vrijeme (s preklopnikom granularnosti) */}
+              <section className="analytics-card">
+                <div className="analytics-card-head">
+                  <h3 className="analytics-card-title">Broj alarma kroz vrijeme</h3>
+                  <div className="analytics-toggle" role="group" aria-label="Granularnost prikaza">
+                    {(['dan', 'tjedan', 'mjesec'] as const).map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        className={`analytics-toggle-btn ${granularnost === g ? 'analytics-toggle-btn-active' : ''}`}
+                        aria-pressed={granularnost === g}
+                        onClick={() => setGranularnost(g)}
+                      >
+                        {labelGranularnosti[g]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div
                   role="img"
-                  aria-label={`Kružni graf raspodjele alarma po tipu. Najčešći tip: ${najcesciTip}.`}
+                  aria-label={`Stupčasti graf broja alarma kroz vrijeme, prikaz ${labelGranularnosti[granularnost].toLowerCase()}. Ukupno ${ukupno} alarma.`}
                 >
-                  <ResponsiveContainer width="100%" height={240}>
-                    <PieChart>
-                      <Pie
-                        data={poTipu}
-                        dataKey="broj"
-                        nameKey="naziv"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={95}
-                        paddingAngle={2}
-                        stroke="none"
-                      >
-                        {poTipu.map((d) => (
-                          <Cell key={d.tip} fill={bojaTipa[d.tip]} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<ChartTooltip />} />
-                    </PieChart>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={krozVrijeme} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
+                      <XAxis dataKey="oznaka" stroke={GRID} tick={{ fill: OS_TEKST, fontSize: 12 }} tickLine={false} />
+                      <YAxis allowDecimals={false} stroke={GRID} tick={{ fill: OS_TEKST, fontSize: 12 }} tickLine={false} axisLine={false} />
+                      <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                      <Bar dataKey="broj" name="Broj alarma" fill={ACCENT} radius={[6, 6, 0, 0]} maxBarSize={48} />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
-                {/* Vlastita legenda — preglednija i u stilu stranice */}
-                <ul className="analytics-legend">
-                  {poTipu.map((d) => (
-                    <li key={d.tip} className="analytics-legend-item">
-                      <span className="analytics-legend-dot" style={{ background: bojaTipa[d.tip] }} />
-                      <span className="analytics-legend-name">{d.naziv}</span>
-                      <span className="analytics-legend-value">
-                        {d.broj} ({Math.round((d.broj / ukupno) * 100)}%)
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
+              </section>
 
-            {/* Graf 3 — aktivnost po kameri (horizontalni bar, najaktivnija istaknuta) */}
-            <section className="analytics-card">
-              <h3 className="analytics-card-title">Aktivnost po kameri</h3>
-              <div
-                role="img"
-                aria-label={`Stupčasti graf aktivnosti po kameri. Najaktivnija kamera: ${najaktivnijaKamera}.`}
-              >
-                <ResponsiveContainer width="100%" height={Math.max(240, poKameri.length * 44)}>
-                  <BarChart data={poKameri} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={GRID} horizontal={false} />
-                    <XAxis type="number" allowDecimals={false} stroke={GRID} tick={{ fill: OS_TEKST, fontSize: 12 }} tickLine={false} axisLine={false} />
-                    <YAxis type="category" dataKey="kamera" width={130} stroke={GRID} tick={{ fill: OS_TEKST, fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-                    <Bar dataKey="broj" name="Broj alarma" radius={[0, 6, 6, 0]} maxBarSize={26}>
-                      {poKameri.map((d, i) => (
-                        <Cell key={d.kamera} fill={i === 0 ? ACCENT : ACCENT_DIM} />
+              {/* Donji red — raspodjela po tipu + aktivnost po kameri */}
+              <div className="analytics-grid">
+                {/* Graf 2 — raspodjela po tipu (pie) */}
+                <section className="analytics-card">
+                  <h3 className="analytics-card-title">Raspodjela po tipu</h3>
+                  <div className="analytics-pie-wrap">
+                    <div
+                      role="img"
+                      aria-label={`Kružni graf raspodjele alarma po tipu. Najčešći tip: ${najcesciTip}.`}
+                    >
+                      <ResponsiveContainer width="100%" height={240}>
+                        <PieChart>
+                          <Pie
+                            data={poTipu}
+                            dataKey="broj"
+                            nameKey="naziv"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={55}
+                            outerRadius={95}
+                            paddingAngle={2}
+                            stroke="none"
+                          >
+                            {poTipu.map((d) => (
+                              <Cell key={d.tip} fill={bojaTipa[d.tip]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<ChartTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* Vlastita legenda — preglednija i u stilu stranice */}
+                    <ul className="analytics-legend">
+                      {poTipu.map((d) => (
+                        <li key={d.tip} className="analytics-legend-item">
+                          <span className="analytics-legend-dot" style={{ background: bojaTipa[d.tip] }} />
+                          <span className="analytics-legend-name">{d.naziv}</span>
+                          <span className="analytics-legend-value">
+                            {d.broj} ({Math.round((d.broj / ukupno) * 100)}%)
+                          </span>
+                        </li>
                       ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                    </ul>
+                  </div>
+                </section>
+
+                {/* Graf 3 — aktivnost po kameri (horizontalni bar, najaktivnija istaknuta) */}
+                <section className="analytics-card">
+                  <h3 className="analytics-card-title">Aktivnost po kameri</h3>
+                  <div
+                    role="img"
+                    aria-label={`Stupčasti graf aktivnosti po kameri. Najaktivnija kamera: ${najaktivnijaKamera}.`}
+                  >
+                    <ResponsiveContainer width="100%" height={Math.max(240, poKameri.length * 44)}>
+                      <BarChart data={poKameri} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={GRID} horizontal={false} />
+                        <XAxis type="number" allowDecimals={false} stroke={GRID} tick={{ fill: OS_TEKST, fontSize: 12 }} tickLine={false} axisLine={false} />
+                        <YAxis type="category" dataKey="kamera" width={130} stroke={GRID} tick={{ fill: OS_TEKST, fontSize: 11 }} tickLine={false} axisLine={false} />
+                        <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                        <Bar dataKey="broj" name="Broj alarma" radius={[0, 6, 6, 0]} maxBarSize={26}>
+                          {poKameri.map((d, i) => (
+                            <Cell key={d.kamera} fill={i === 0 ? ACCENT : ACCENT_DIM} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </section>
               </div>
-            </section>
-          </div>
+            </>
+          )}
         </>
       )}
     </>

@@ -232,6 +232,112 @@
   to { transform: rotate(360deg); }
 }
 
+/* ===== Filteri ===== */
+.analytics-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1.5rem;
+}
+
+.analytics-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.analytics-filter-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.analytics-filter-input,
+.analytics-filter-select {
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  outline: none;
+  min-width: 150px;
+}
+
+.analytics-filter-input:hover,
+.analytics-filter-select:hover {
+  border-color: var(--border-hover);
+}
+
+.analytics-filter-input:focus,
+.analytics-filter-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Ikona kalendara u date inputu — vidljiva na tamnoj temi */
+.analytics-filter-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+.analytics-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.analytics-filter-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.analytics-filter-reset:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.analytics-filter-reset svg {
+  width: 14px;
+  height: 14px;
+}
+
+.analytics-filter-summary {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.analytics-filter-summary strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   .analytics-stats {
@@ -240,6 +346,23 @@
 
   .analytics-grid {
     grid-template-columns: 1fr;
+  }
+
+  .analytics-filter-group {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .analytics-filter-input,
+  .analytics-filter-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .analytics-filter-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
   }
 }
 
@@ -254,5 +377,13 @@
 
   .analytics-title {
     font-size: 1.3rem;
+  }
+
+  .analytics-filters {
+    padding: 1rem;
+  }
+
+  .analytics-filter-group {
+    flex-basis: 100%;
   }
 }
