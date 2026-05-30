@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getAuthToken, clearAuthToken } from '../lib/auth';
 import { useNotifications } from '../contexts/NotificationsContext';
@@ -39,6 +39,28 @@ function AppLayout() {
 
   const closeSidebar = () => setIsSidebarOpen(false);
 
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+
+    const desktopQuery = window.matchMedia('(min-width: 1025px)');
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeSidebar();
+    };
+    const handleDesktopChange = (event: MediaQueryListEvent) => {
+      if (event.matches) closeSidebar();
+    };
+
+    document.body.classList.add('sidebar-is-open');
+    document.addEventListener('keydown', handleKeyDown);
+    desktopQuery.addEventListener('change', handleDesktopChange);
+
+    return () => {
+      document.body.classList.remove('sidebar-is-open');
+      document.removeEventListener('keydown', handleKeyDown);
+      desktopQuery.removeEventListener('change', handleDesktopChange);
+    };
+  }, [isSidebarOpen]);
+
   return (
     <div className="app-layout">
       {/* Backdrop na mobilnom kad je sidebar otvoren */}
@@ -47,7 +69,11 @@ function AppLayout() {
       )}
 
       {/* Sidebar navigacija */}
-      <aside className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+      <aside
+        id="sidebar-navigation"
+        className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}
+        aria-label="Glavna navigacija"
+      >
         <div className="sidebar-brand">
           <svg viewBox="0 0 48 48" fill="none" className="sidebar-shield">
             <path d="M24 4L6 14V24C6 35.1 13.68 45.48 24 48C34.32 45.48 42 35.1 42 24V14L24 4Z"
@@ -97,6 +123,8 @@ function AppLayout() {
             className="hamburger-btn"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             aria-label={isSidebarOpen ? 'Zatvori izbornik' : 'Otvori izbornik'}
+            aria-controls="sidebar-navigation"
+            aria-expanded={isSidebarOpen}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {isSidebarOpen ? (
@@ -140,7 +168,7 @@ function AppLayout() {
             </span>
           )}
 
-          <button type="button" className="logout-btn" onClick={handleLogout}>
+          <button type="button" className="logout-btn" onClick={handleLogout} aria-label="Odjava">
             <svg viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clipRule="evenodd"/>
               <path fillRule="evenodd" d="M19 10a.75.75 0 00-.22-.53l-3.25-3.25a.75.75 0 10-1.06 1.06l1.97 1.97H8.75a.75.75 0 000 1.5h7.69l-1.97 1.97a.75.75 0 101.06 1.06l3.25-3.25A.75.75 0 0019 10z" clipRule="evenodd"/>
