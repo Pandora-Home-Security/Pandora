@@ -318,6 +318,10 @@
   display: none;
 }
 
+.sidebar-is-open {
+  overflow: hidden;
+}
+
 /* ===== Responsive: tablet i mobilni ===== */
 @media (max-width: 1024px) {
   /* Sidebar skriveno po defaultu */
@@ -381,6 +385,12 @@
 
   .app-header .logout-btn span {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
   }
 }
 

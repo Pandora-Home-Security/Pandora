@@ -325,7 +325,7 @@
 }
 
 /* ===== Responsive ===== */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .cameras-header {
     flex-direction: column;
   }
@@ -341,6 +341,12 @@
   }
 
   /* Na touchscreenu akcije uvijek vidljive */
+  .camera-card-actions {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
   .camera-card-actions {
     opacity: 1;
   }
