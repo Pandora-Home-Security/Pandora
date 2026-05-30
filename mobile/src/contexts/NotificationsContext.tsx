@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { apiFetch } from '../lib/api';
 import { getAuthToken } from '../lib/auth';
+import { haptics } from '../lib/haptics';
 
 /* ===== Tipovi ===== */
 export type AlarmType = 'motion' | 'sound' | 'offline' | 'door' | 'temp';
@@ -76,6 +77,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         );
 
         if (newOnes.length > 0) {
+          void haptics.warning();
           const newToasts: Toast[] = newOnes.map((alarm) => ({
             id: `toast-${alarm.id}-${Date.now()}`,
             alarm,

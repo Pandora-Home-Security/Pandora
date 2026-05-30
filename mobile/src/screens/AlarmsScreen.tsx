@@ -11,6 +11,7 @@ import Svg, { Path } from 'react-native-svg';
 import { AppScreenLayout } from '../components/AppScreenLayout';
 import { LoadingState, ErrorState, EmptyState } from '../components/DataStates';
 import { apiFetch } from '../lib/api';
+import { haptics } from '../lib/haptics';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
 import {
@@ -102,6 +103,7 @@ export function AlarmsScreen() {
         includeAuth: true,
         body: JSON.stringify({}),
       });
+      void haptics.medium();
       await refresh();
     } catch {
       // tiho ignoriraj
@@ -193,7 +195,7 @@ export function AlarmsScreen() {
 
           {unreadCount > 0 && (
             <Pressable
-              onPress={() => void markAllAsRead()}
+              onPress={() => { void haptics.light(); void markAllAsRead(); }}
               style={({ pressed }) => [
                 styles.markAllBtn,
                 pressed && styles.markAllBtnPressed,
@@ -269,7 +271,7 @@ export function AlarmsScreen() {
               <AlarmCard
                 key={alarm.id}
                 alarm={alarm}
-                onMarkAsRead={() => void markAsRead(alarm.id)}
+                onMarkAsRead={() => { void haptics.light(); void markAsRead(alarm.id); }}
               />
             ))}
           </View>

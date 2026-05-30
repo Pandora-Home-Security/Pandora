@@ -14,6 +14,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { colors, radius } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { haptics } from '../lib/haptics';
 import type { SensorType } from '../data/mockData';
 
 export type SensorFormData = {
@@ -93,7 +94,9 @@ export function SensorFormModal({
         location: location.trim(),
         ...(isEdit ? { status } : {}),
       });
+      void haptics.success();
     } catch (err) {
+      void haptics.error();
       setError(err instanceof Error ? err.message : 'Došlo je do greške.');
     } finally {
       setIsSubmitting(false);
