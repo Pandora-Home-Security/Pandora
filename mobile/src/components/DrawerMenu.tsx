@@ -9,7 +9,7 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { colors, radius } from '../theme/colors';
@@ -73,6 +73,7 @@ type Props = {
 
 export function DrawerMenu({ visible, onClose }: Props) {
   const navigation = useNavigation<RootStackNavigation>();
+  const insets = useSafeAreaInsets();
   const { unreadCount } = useNotifications();
   const activeRoute = useNavigationState((state) =>
     state ? state.routes[state.index]?.name : undefined
@@ -138,7 +139,7 @@ export function DrawerMenu({ visible, onClose }: Props) {
             { width: DRAWER_WIDTH, transform: [{ translateX: slideAnim }] },
           ]}
         >
-          <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+          <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
             <View style={styles.brand}>
               <Svg viewBox="0 0 48 48" width={36} height={36} fill="none">
                 <Path
@@ -212,7 +213,7 @@ export function DrawerMenu({ visible, onClose }: Props) {
             <View style={styles.footer}>
               <Text style={styles.footerText}>© 2026 Pandora Security</Text>
             </View>
-          </SafeAreaView>
+          </View>
         </Animated.View>
       </View>
     </Modal>
