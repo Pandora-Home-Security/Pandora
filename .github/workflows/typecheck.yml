@@ -35,6 +35,8 @@ jobs:
         working-directory: web
       - run: npx tsc --noEmit
         working-directory: web
+      - run: npm test
+        working-directory: web
 
   backend:
     name: Backend
@@ -49,4 +51,6 @@ jobs:
       - run: npm ci
         working-directory: backend
       - run: npx tsc --noEmit
+        working-directory: backend
+      - run: npm test
         working-directory: backend
