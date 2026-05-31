@@ -23,10 +23,18 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Account'>;
 
 type AlertState = { type: 'success' | 'error'; message: string } | null;
 
-function decodeTokenUser(token: string): { id: string; ime: string; email: string } | null {
+function decodeTokenUser(
+  token: string,
+): { id: string; ime: string; email: string; role: 'admin' | 'korisnik' } | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    return { id: payload.id ?? '', ime: payload.ime ?? '', email: payload.email ?? '' };
+    const role = payload.role === 'admin' ? 'admin' : 'korisnik';
+    return {
+      id: payload.id ?? payload.sub ?? '',
+      ime: payload.ime ?? '',
+      email: payload.email ?? '',
+      role,
+    };
   } catch {
     return null;
   }

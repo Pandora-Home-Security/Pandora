@@ -9,7 +9,7 @@ import { AlarmsScreen } from '../screens/AlarmsScreen';
 import { SensorsScreen } from '../screens/SensorsScreen';
 import { SensorDetailScreen } from '../screens/SensorDetailScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
-import { UsersScreen } from '../screens/placeholder';
+import { UsersScreen } from '../screens/UsersScreen';
 import { useTheme } from '../contexts/ThemeContext';
 
 export type RootStackParamList = {

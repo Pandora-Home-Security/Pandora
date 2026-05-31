@@ -16,6 +16,7 @@ import { radius, type ColorPalette } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
 import { useNotifications } from '../contexts/NotificationsContext';
+import { getUserRole } from '../lib/auth';
 import type { RootStackParamList, RootStackNavigation } from '../navigation/RootStack';
 
 type NavRoute = keyof RootStackParamList;
@@ -25,6 +26,7 @@ type NavItem = {
   label: string;
   icon: string;
   badge?: number;
+  adminOnly?: boolean;
 };
 
 const navItems: NavItem[] = [
@@ -57,6 +59,7 @@ const navItems: NavItem[] = [
     route: 'Users',
     label: 'Korisnici',
     icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+    adminOnly: true,
   },
   {
     route: 'Account',
@@ -81,6 +84,8 @@ export function DrawerMenu({ visible, onClose }: Props) {
   const activeRoute = useNavigationState((state) =>
     state ? state.routes[state.index]?.name : undefined
   );
+  const userRole = getUserRole();
+  const visibleNavItems = navItems.filter((item) => !item.adminOnly || userRole === 'admin');
 
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -173,7 +178,7 @@ export function DrawerMenu({ visible, onClose }: Props) {
               contentContainerStyle={styles.navContent}
               showsVerticalScrollIndicator={false}
             >
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const isActive = activeRoute === item.route;
                 const badge = item.route === 'Alarms' ? unreadCount : item.badge ?? 0;
                 return (

@@ -80,6 +80,7 @@ function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Invite modal
   const [showInvite, setShowInvite] = useState(false);
@@ -200,6 +201,15 @@ function UsersPage() {
   const adminCount = users.filter((u) => u.role === 'admin').length;
   const userCount = users.filter((u) => u.role === 'korisnik').length;
 
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const filteredUsers = trimmedQuery
+    ? users.filter(
+        (u) =>
+          u.ime.toLowerCase().includes(trimmedQuery) ||
+          u.email.toLowerCase().includes(trimmedQuery),
+      )
+    : users;
+
   return (
     <>
       {/* Zaglavlje */}
@@ -228,6 +238,36 @@ function UsersPage() {
         </div>
       </div>
 
+      {/* Search */}
+      {!loading && !error && users.length > 0 && (
+        <div className="users-search">
+          <svg className="users-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="9" r="6" />
+            <path d="M14 14l4 4" />
+          </svg>
+          <input
+            type="search"
+            className="users-search-input"
+            placeholder="Pretraži po imenu ili emailu…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Pretraživanje korisnika"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="users-search-clear"
+              onClick={() => setSearchQuery('')}
+              aria-label="Očisti pretraživanje"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.7 7.3a1 1 0 00-1.4 1.4L8.6 10l-1.3 1.3a1 1 0 101.4 1.4L10 11.4l1.3 1.3a1 1 0 001.4-1.4L11.4 10l1.3-1.3a1 1 0 00-1.4-1.4L10 8.6 8.7 7.3z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Sadržaj */}
       {loading ? (
         <LoadingState message="Učitavanje korisnika..." />
@@ -235,6 +275,8 @@ function UsersPage() {
         <ErrorState message={error} onRetry={fetchUsers} />
       ) : users.length === 0 ? (
         <EmptyState message="Nema registriranih korisnika." />
+      ) : filteredUsers.length === 0 ? (
+        <EmptyState message={`Nema rezultata za "${searchQuery}".`} />
       ) : (
         <div className="users-table-wrapper">
           <table className="users-table">
@@ -248,7 +290,7 @@ function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => {
+              {filteredUsers.map((user) => {
                 const isMe = user.id === currentUserId;
                 return (
                   <tr key={user.id} className={isMe ? 'users-row-me' : ''}>
