@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  Modal,
 } from 'react-native';
 import Svg, { Path, G } from 'react-native-svg';
 import { AppScreenLayout } from '../components/AppScreenLayout';
@@ -46,6 +47,26 @@ const labelGranularnosti: Record<Granularnost, string> = {
   dan: 'Dan',
   tjedan: 'Tjedan',
   mjesec: 'Mjesec',
+};
+
+/* ===== Filter konstante ===== */
+const FILTER_SVE = 'sve';
+
+// Preset rasponi za datumski filter (mobile UX > date picker)
+type DatumPreset = 'sve' | '1d' | '7d' | '30d' | '90d';
+const datumPresetOpcije: { key: DatumPreset; label: string }[] = [
+  { key: 'sve', label: 'Sve' },
+  { key: '1d', label: 'Danas' },
+  { key: '7d', label: '7 dana' },
+  { key: '30d', label: '30 dana' },
+  { key: '90d', label: '90 dana' },
+];
+const datumPresetDana: Record<DatumPreset, number | null> = {
+  sve: null,
+  '1d': 1,
+  '7d': 7,
+  '30d': 30,
+  '90d': 90,
 };
 
 /* ===== Pomoćne funkcije ===== */
@@ -329,24 +350,63 @@ function StatKartica({
 
 /* ===== Glavna komponenta ===== */
 export function AnalyticsScreen() {
+  const { colors } = useTheme();
   const { alarms, isLoading } = useNotifications();
   const styles = useThemedStyles(makeStyles);
   const [granularnost, setGranularnost] = useState<Granularnost>('dan');
   const [selectedBarIdx, setSelectedBarIdx] = useState<number | null>(null);
 
-  const krozVrijeme = useMemo(
-    () => podaciKrozVrijeme(alarms, granularnost),
-    [alarms, granularnost]
-  );
-  const poTipu = useMemo(() => podaciPoTipu(alarms), [alarms]);
-  const poKameri = useMemo(() => podaciPoKameri(alarms), [alarms]);
+  // Stanja filtera
+  const [datumPreset, setDatumPreset] = useState<DatumPreset>('sve');
+  const [filterKamera, setFilterKamera] = useState<string>(FILTER_SVE);
+  const [filterTip, setFilterTip] = useState<AlarmType | typeof FILTER_SVE>(FILTER_SVE);
+  const [kameraModalOpen, setKameraModalOpen] = useState(false);
 
-  const ukupno = alarms.length;
-  const neprocitano = alarms.filter((a) => !a.isRead).length;
+  // Popis kamera za dropdown — jedinstvene vrijednosti iz svih alarma, abecedno
+  const kamere = useMemo(
+    () => [...new Set(alarms.map((a) => a.camera))].sort((a, b) => a.localeCompare(b, 'hr')),
+    [alarms]
+  );
+
+  // Primijeni filtere na alarme prije svih agregacija
+  const filtrirani = useMemo(() => {
+    const dana = datumPresetDana[datumPreset];
+    const granica =
+      dana !== null ? Date.now() - dana * 24 * 60 * 60 * 1000 : null;
+    return alarms.filter((a) => {
+      const t = new Date(a.time).getTime();
+      if (granica !== null && t < granica) return false;
+      if (filterKamera !== FILTER_SVE && a.camera !== filterKamera) return false;
+      if (filterTip !== FILTER_SVE && a.type !== filterTip) return false;
+      return true;
+    });
+  }, [alarms, datumPreset, filterKamera, filterTip]);
+
+  const filteriAktivni =
+    datumPreset !== 'sve' || filterKamera !== FILTER_SVE || filterTip !== FILTER_SVE;
+
+  const ocistiFiltere = () => {
+    setDatumPreset('sve');
+    setFilterKamera(FILTER_SVE);
+    setFilterTip(FILTER_SVE);
+    setSelectedBarIdx(null);
+  };
+
+  // Agregacije nad filtriranim podacima
+  const krozVrijeme = useMemo(
+    () => podaciKrozVrijeme(filtrirani, granularnost),
+    [filtrirani, granularnost]
+  );
+  const poTipu = useMemo(() => podaciPoTipu(filtrirani), [filtrirani]);
+  const poKameri = useMemo(() => podaciPoKameri(filtrirani), [filtrirani]);
+
+  const ukupnoSve = alarms.length;
+  const ukupno = filtrirani.length;
+  const neprocitano = filtrirani.filter((a) => !a.isRead).length;
   const najcesciTip = poTipu[0]?.naziv ?? '—';
   const najaktivnijaKamera = poKameri[0]?.kamera ?? '—';
 
-  if (isLoading && ukupno === 0) {
+  if (isLoading && ukupnoSve === 0) {
     return (
       <AppScreenLayout title="Analitika">
         <LoadingState message="Učitavanje podataka..." />
@@ -363,10 +423,161 @@ export function AnalyticsScreen() {
           <Text style={styles.subtitle}>Vizualni prikaz statistike i trendova alarma</Text>
         </View>
 
-        {ukupno === 0 ? (
+        {ukupnoSve === 0 ? (
           <EmptyState message="Još nema alarma za analizu." />
         ) : (
           <>
+            {/* Filteri */}
+            <View style={styles.filtersCard}>
+              {/* Datumski raspon */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>Vremenski raspon</Text>
+                <View style={styles.chipRow}>
+                  {datumPresetOpcije.map((opt) => {
+                    const active = datumPreset === opt.key;
+                    return (
+                      <Pressable
+                        key={opt.key}
+                        onPress={() => {
+                          setDatumPreset(opt.key);
+                          setSelectedBarIdx(null);
+                        }}
+                        style={({ pressed }) => [
+                          styles.chip,
+                          active && styles.chipActive,
+                          pressed && !active && styles.chipPressed,
+                        ]}
+                      >
+                        <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                          {opt.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Tip alarma */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>Tip alarma</Text>
+                <View style={styles.chipRow}>
+                  <Pressable
+                    onPress={() => {
+                      setFilterTip(FILTER_SVE);
+                      setSelectedBarIdx(null);
+                    }}
+                    style={({ pressed }) => [
+                      styles.chip,
+                      filterTip === FILTER_SVE && styles.chipActive,
+                      pressed && filterTip !== FILTER_SVE && styles.chipPressed,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        filterTip === FILTER_SVE && styles.chipTextActive,
+                      ]}
+                    >
+                      Svi
+                    </Text>
+                  </Pressable>
+                  {(Object.keys(nazivTipa) as AlarmType[]).map((t) => {
+                    const active = filterTip === t;
+                    return (
+                      <Pressable
+                        key={t}
+                        onPress={() => {
+                          setFilterTip(t);
+                          setSelectedBarIdx(null);
+                        }}
+                        style={({ pressed }) => [
+                          styles.chip,
+                          active && styles.chipActive,
+                          pressed && !active && styles.chipPressed,
+                        ]}
+                      >
+                        <View style={[styles.chipDot, { backgroundColor: bojaTipa[t] }]} />
+                        <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                          {nazivTipa[t]}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Kamera */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>Kamera</Text>
+                <Pressable
+                  onPress={() => setKameraModalOpen(true)}
+                  style={({ pressed }) => [
+                    styles.selectBtn,
+                    filterKamera !== FILTER_SVE && styles.selectBtnActive,
+                    pressed && styles.selectBtnPressed,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.selectBtnText,
+                      filterKamera !== FILTER_SVE && styles.selectBtnTextActive,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {filterKamera === FILTER_SVE ? 'Sve kamere' : filterKamera}
+                  </Text>
+                  <Svg viewBox="0 0 20 20" width={14} height={14} fill={colors.textMuted}>
+                    <Path
+                      fillRule="evenodd"
+                      d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                      clipRule="evenodd"
+                    />
+                  </Svg>
+                </Pressable>
+              </View>
+
+              {/* Akcije / sažetak */}
+              <View style={styles.filterActions}>
+                {filteriAktivni && (
+                  <Pressable
+                    onPress={ocistiFiltere}
+                    style={({ pressed }) => [
+                      styles.clearBtn,
+                      pressed && styles.clearBtnPressed,
+                    ]}
+                  >
+                    <Svg viewBox="0 0 20 20" width={14} height={14} fill={colors.accent}>
+                      <Path
+                        fillRule="evenodd"
+                        d="M4.755 10.059a7.5 7.5 0 0112.548-3.364l1.903 1.903h-3.183a.75.75 0 100 1.5h4.992a.75.75 0 00.75-.75V4.356a.75.75 0 00-1.5 0v3.18l-1.9-1.9A9 9 0 003.306 9.67a.75.75 0 101.45.388zm15.408 3.352a.75.75 0 00-.919.53 7.5 7.5 0 01-12.548 3.364l-1.902-1.903h3.183a.75.75 0 000-1.5H2.984a.75.75 0 00-.75.75v4.992a.75.75 0 001.5 0v-3.18l1.9 1.9a9 9 0 0015.059-4.035.75.75 0 00-.53-.918z"
+                        clipRule="evenodd"
+                      />
+                    </Svg>
+                    <Text style={styles.clearBtnText}>Očisti filtere</Text>
+                  </Pressable>
+                )}
+                <Text style={styles.filterSummary}>
+                  Prikazano <Text style={styles.filterSummaryBold}>{ukupno}</Text>{' '}
+                  {ukupno === 1 ? 'alarm' : 'alarma'} od {ukupnoSve}
+                </Text>
+              </View>
+            </View>
+
+            {ukupno === 0 ? (
+              <View style={styles.emptyFiltered}>
+                <EmptyState message="Nema alarma koji odgovaraju odabranim filterima." />
+                <Pressable
+                  onPress={ocistiFiltere}
+                  style={({ pressed }) => [
+                    styles.clearBtnInline,
+                    pressed && styles.clearBtnPressed,
+                  ]}
+                >
+                  <Text style={styles.clearBtnText}>Očisti filtere</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <>
             {/* Stat kartice */}
             <View style={styles.statsGrid}>
               <StatKartica naziv="Ukupno alarma" vrijednost={String(ukupno)} />
@@ -454,9 +665,111 @@ export function AnalyticsScreen() {
               <Text style={styles.cardTitle}>Aktivnost po kameri</Text>
               <HorizontalBarChart data={poKameri} />
             </View>
+              </>
+            )}
           </>
         )}
       </ScrollView>
+
+      {/* Modal s popisom kamera */}
+      <Modal
+        visible={kameraModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setKameraModalOpen(false)}
+        statusBarTranslucent
+      >
+        <View style={styles.modalBackdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setKameraModalOpen(false)}
+          />
+          <View style={styles.modalCard} pointerEvents="box-none">
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Odaberi kameru</Text>
+              <Pressable
+                onPress={() => setKameraModalOpen(false)}
+                hitSlop={8}
+                style={styles.modalClose}
+              >
+                <Svg viewBox="0 0 20 20" width={20} height={20} fill={colors.textSecondary}>
+                  <Path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </Svg>
+              </Pressable>
+            </View>
+
+            <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
+              <Pressable
+                onPress={() => {
+                  setFilterKamera(FILTER_SVE);
+                  setKameraModalOpen(false);
+                  setSelectedBarIdx(null);
+                }}
+                style={({ pressed }) => [
+                  styles.modalOption,
+                  filterKamera === FILTER_SVE && styles.modalOptionActive,
+                  pressed && filterKamera !== FILTER_SVE && styles.modalOptionPressed,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.modalOptionText,
+                    filterKamera === FILTER_SVE && styles.modalOptionTextActive,
+                  ]}
+                >
+                  Sve kamere
+                </Text>
+                {filterKamera === FILTER_SVE && (
+                  <Svg viewBox="0 0 20 20" width={16} height={16} fill={colors.accent}>
+                    <Path
+                      fillRule="evenodd"
+                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                      clipRule="evenodd"
+                    />
+                  </Svg>
+                )}
+              </Pressable>
+              {kamere.map((k) => {
+                const active = filterKamera === k;
+                return (
+                  <Pressable
+                    key={k}
+                    onPress={() => {
+                      setFilterKamera(k);
+                      setKameraModalOpen(false);
+                      setSelectedBarIdx(null);
+                    }}
+                    style={({ pressed }) => [
+                      styles.modalOption,
+                      active && styles.modalOptionActive,
+                      pressed && !active && styles.modalOptionPressed,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.modalOptionText,
+                        active && styles.modalOptionTextActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {k}
+                    </Text>
+                    {active && (
+                      <Svg viewBox="0 0 20 20" width={16} height={16} fill={colors.accent}>
+                        <Path
+                          fillRule="evenodd"
+                          d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                          clipRule="evenodd"
+                        />
+                      </Svg>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </AppScreenLayout>
   );
 }
@@ -624,6 +937,206 @@ const makeStyles = (colors: ColorPalette) =>
       ...typography.label,
       color: colors.textMuted,
       fontWeight: '600',
+    },
+
+    // Filteri
+    filtersCard: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      padding: 14,
+      gap: 12,
+    },
+    filterGroup: {
+      gap: 8,
+    },
+    filterLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+      fontSize: 10,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+    },
+    chipRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+    },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgInput,
+    },
+    chipActive: {
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.accent,
+    },
+    chipPressed: {
+      backgroundColor: colors.bgSurface,
+    },
+    chipText: {
+      ...typography.label,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    chipTextActive: {
+      color: colors.accent,
+      fontWeight: '700',
+    },
+    chipDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    selectBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 12,
+      paddingVertical: 11,
+      borderRadius: radius.input,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgInput,
+      gap: 8,
+    },
+    selectBtnActive: {
+      borderColor: colors.accent,
+      backgroundColor: colors.accentSoft,
+    },
+    selectBtnPressed: {
+      backgroundColor: colors.bgSurface,
+    },
+    selectBtnText: {
+      ...typography.formSubheader,
+      color: colors.textSecondary,
+      flex: 1,
+    },
+    selectBtnTextActive: {
+      color: colors.accent,
+      fontWeight: '600',
+    },
+    filterActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 10,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSubtle,
+      paddingTop: 10,
+      flexWrap: 'wrap',
+    },
+    clearBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radius.input,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      backgroundColor: colors.accentSoft,
+    },
+    clearBtnPressed: {
+      opacity: 0.7,
+    },
+    clearBtnInline: {
+      alignSelf: 'center',
+      marginTop: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      borderRadius: radius.button,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      backgroundColor: colors.accentSoft,
+    },
+    clearBtnText: {
+      ...typography.label,
+      color: colors.accent,
+      fontWeight: '700',
+    },
+    filterSummary: {
+      ...typography.label,
+      color: colors.textMuted,
+      flexShrink: 1,
+      textAlign: 'right',
+    },
+    filterSummaryBold: {
+      color: colors.textPrimary,
+      fontWeight: '700',
+    },
+    emptyFiltered: {
+      gap: 4,
+    },
+
+    // Modal kamera
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.65)',
+      justifyContent: 'center',
+      paddingHorizontal: 18,
+    },
+    modalCard: {
+      backgroundColor: colors.bgSurface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      maxHeight: '70%',
+      overflow: 'hidden',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderSubtle,
+    },
+    modalTitle: {
+      ...typography.formHeader,
+      color: colors.textPrimary,
+      fontSize: 16,
+    },
+    modalClose: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalList: {
+      padding: 8,
+    },
+    modalOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      borderRadius: radius.input,
+      gap: 8,
+    },
+    modalOptionActive: {
+      backgroundColor: colors.accentSoft,
+    },
+    modalOptionPressed: {
+      backgroundColor: colors.bgInput,
+    },
+    modalOptionText: {
+      ...typography.formSubheader,
+      color: colors.textPrimary,
+      flex: 1,
+    },
+    modalOptionTextActive: {
+      color: colors.accent,
+      fontWeight: '700',
     },
   });
 
