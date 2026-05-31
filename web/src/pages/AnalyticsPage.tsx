@@ -7,19 +7,17 @@ import {
 import type { TooltipProps } from 'recharts';
 import './AnalyticsPage.css';
 import { useNotifications } from '../contexts/NotificationsContext';
-import type { Alarm, AlarmType } from '../contexts/NotificationsContext';
+import type { AlarmType } from '../contexts/NotificationsContext';
+import {
+  nazivTipa,
+  podaciKrozVrijeme,
+  podaciPoTipu,
+  podaciPoKameri,
+  tekstAlarma,
+  type Granularnost,
+} from '../lib/analytics';
 
-/* ===== Tipovi i konstante ===== */
-type Granularnost = 'dan' | 'tjedan' | 'mjesec';
-
-// Hrvatski nazivi tipova alarma (isti kao na stranici alarma)
-const nazivTipa: Record<AlarmType, string> = {
-  motion: 'Pokret',
-  sound: 'Zvuk',
-  offline: 'Offline',
-  door: 'Vrata',
-  temp: 'Temperatura',
-};
+/* ===== Konstante prikaza (boje, oznake) ===== */
 
 // Boje po tipu — usklađene s bedževima na stranici alarma
 const bojaTipa: Record<AlarmType, string> = {
@@ -36,9 +34,6 @@ const ACCENT_DIM = 'rgba(212, 168, 83, 0.4)';
 const GRID = 'rgba(255, 255, 255, 0.06)';
 const OS_TEKST = '#8a8f9c';
 
-// Kratice mjeseci za oznake na grafu
-const mjeseci = ['Sij', 'Velj', 'Ožu', 'Tra', 'Svi', 'Lip', 'Srp', 'Kol', 'Ruj', 'Lis', 'Stu', 'Pro'];
-
 // Oznake za preklopnik granularnosti (koriste se za gumbe i za aria-label)
 const labelGranularnosti: Record<Granularnost, string> = {
   dan: 'Po danu',
@@ -47,87 +42,6 @@ const labelGranularnosti: Record<Granularnost, string> = {
 };
 
 const FILTER_SVE = 'sve';
-
-/* ===== Pomoćne funkcije za grupiranje po vremenu ===== */
-
-// Vrati početak razdoblja kojem datum pripada:
-// dan -> ponoć tog dana, tjedan -> ponedjeljak, mjesec -> 1. u mjesecu.
-function pocetakRazdoblja(datum: Date, g: Granularnost): Date {
-  const d = new Date(datum.getFullYear(), datum.getMonth(), datum.getDate());
-  if (g === 'tjedan') {
-    const pomak = (d.getDay() + 6) % 7; // 0 = ponedjeljak
-    d.setDate(d.getDate() - pomak);
-  } else if (g === 'mjesec') {
-    d.setDate(1);
-  }
-  return d;
-}
-
-// Pomakni datum na sljedeće razdoblje (koristi se za popunjavanje praznina na osi).
-function sljedeceRazdoblje(datum: Date, g: Granularnost): Date {
-  const d = new Date(datum);
-  if (g === 'dan') d.setDate(d.getDate() + 1);
-  else if (g === 'tjedan') d.setDate(d.getDate() + 7);
-  else d.setMonth(d.getMonth() + 1);
-  return d;
-}
-
-// Tekstualna oznaka razdoblja za x-os.
-function oznakaRazdoblja(datum: Date, g: Granularnost): string {
-  if (g === 'mjesec') return `${mjeseci[datum.getMonth()]} ${datum.getFullYear()}`;
-  const dan = String(datum.getDate()).padStart(2, '0');
-  const mj = String(datum.getMonth() + 1).padStart(2, '0');
-  return `${dan}.${mj}.`;
-}
-
-/* ===== Agregacije podataka ===== */
-
-// Broj alarma po razdoblju. Praznine između prvog i zadnjeg alarma popunjavamo
-// nulama da vremenska os bude kontinuirana, a prikazujemo samo zadnjih N razdoblja.
-function podaciKrozVrijeme(alarmi: Alarm[], g: Granularnost): { oznaka: string; broj: number }[] {
-  if (alarmi.length === 0) return [];
-
-  const brojPoKljucu = new Map<number, number>();
-  for (const a of alarmi) {
-    const kljuc = pocetakRazdoblja(new Date(a.time), g).getTime();
-    brojPoKljucu.set(kljuc, (brojPoKljucu.get(kljuc) ?? 0) + 1);
-  }
-
-  const kljucevi = [...brojPoKljucu.keys()].sort((a, b) => a - b);
-  const prvi = new Date(kljucevi[0]);
-  const zadnji = new Date(kljucevi[kljucevi.length - 1]);
-
-  const sve: { oznaka: string; broj: number }[] = [];
-  for (let d = prvi; d <= zadnji; d = sljedeceRazdoblje(d, g)) {
-    sve.push({ oznaka: oznakaRazdoblja(d, g), broj: brojPoKljucu.get(d.getTime()) ?? 0 });
-  }
-
-  const limit = g === 'dan' ? 30 : 12;
-  return sve.slice(-limit);
-}
-
-// Raspodjela alarma po tipu (za pie chart), sortirano silazno.
-function podaciPoTipu(alarmi: Alarm[]): { tip: AlarmType; naziv: string; broj: number }[] {
-  const broj = new Map<AlarmType, number>();
-  for (const a of alarmi) broj.set(a.type, (broj.get(a.type) ?? 0) + 1);
-  return [...broj.entries()]
-    .map(([tip, n]) => ({ tip, naziv: nazivTipa[tip], broj: n }))
-    .sort((a, b) => b.broj - a.broj);
-}
-
-// Broj alarma po kameri, sortirano silazno (najaktivnija prva).
-function podaciPoKameri(alarmi: Alarm[]): { kamera: string; broj: number }[] {
-  const broj = new Map<string, number>();
-  for (const a of alarmi) broj.set(a.camera, (broj.get(a.camera) ?? 0) + 1);
-  return [...broj.entries()]
-    .map(([kamera, n]) => ({ kamera, broj: n }))
-    .sort((a, b) => b.broj - a.broj);
-}
-
-// Broj uz odgovarajući oblik riječi (pojednostavljeno: 1 = alarm, ostalo = alarma).
-function tekstAlarma(n: number): string {
-  return `${n} ${n === 1 ? 'alarm' : 'alarma'}`;
-}
 
 /* ===== Prilagođeni tooltip (Recharts default je svijetao, ne prati temu) ===== */
 function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) {

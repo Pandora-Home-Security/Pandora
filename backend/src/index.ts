@@ -5,13 +5,16 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Pool } from 'pg';
 import type { NextFunction, Request, Response } from 'express';
+import { signToken, verifyToken } from './lib/token';
+import type { AuthTokenPayload, UserRole } from './lib/token';
+import { isValidEmail, isValidPassword, isNonEmptyString } from './lib/validation';
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
-const JWT_SECRET = process.env.JWT_SECRET ?? 'pandora-dev-secret';
 const TOKEN_TTL_SECONDS = 60 * 60 * 8;
+const IS_TEST = process.env.VITEST === 'true';
 
-if (!process.env.DATABASE_URL) {
+if (!process.env.DATABASE_URL && !IS_TEST) {
   console.error('DATABASE_URL nije postavljen. Kopiraj backend/.env.example u backend/.env.');
   process.exit(1);
 }
@@ -21,8 +24,6 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 app.use(cors());
 app.use(express.json());
 
-type UserRole = 'admin' | 'korisnik';
-
 type StoredUser = {
   id: string;
   ime: string;
@@ -31,63 +32,8 @@ type StoredUser = {
   role: UserRole;
 };
 
-type AuthTokenPayload = {
-  sub: string;
-  email: string;
-  ime: string;
-  role: UserRole;
-  exp: number;
-};
-
 type AuthenticatedRequest = Request & {
   user?: AuthTokenPayload;
-};
-
-const base64UrlEncode = (value: string) => Buffer.from(value).toString('base64url');
-
-const createSignature = (value: string) =>
-  crypto.createHmac('sha256', JWT_SECRET).update(value).digest('base64url');
-
-const signToken = (payload: AuthTokenPayload) => {
-  const header = { alg: 'HS256', typ: 'JWT' };
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-  const signature = createSignature(`${encodedHeader}.${encodedPayload}`);
-  return `${encodedHeader}.${encodedPayload}.${signature}`;
-};
-
-const verifyToken = (token: string): AuthTokenPayload | null => {
-  const parts = token.split('.');
-  if (parts.length !== 3) {
-    return null;
-  }
-
-  const [encodedHeader, encodedPayload, receivedSignature] = parts;
-  const expectedSignature = createSignature(`${encodedHeader}.${encodedPayload}`);
-  if (receivedSignature !== expectedSignature) {
-    return null;
-  }
-
-  try {
-    const payload = JSON.parse(
-      Buffer.from(encodedPayload, 'base64url').toString('utf-8'),
-    ) as AuthTokenPayload;
-
-    if (!payload.sub || !payload.email || !payload.ime || !payload.exp) {
-      return null;
-    }
-    if (!payload.role) {
-      payload.role = 'korisnik';
-    }
-
-    if (payload.exp <= Math.floor(Date.now() / 1000)) {
-      return null;
-    }
-
-    return payload;
-  } catch {
-    return null;
-  }
 };
 
 const createAuthToken = (user: StoredUser) =>
@@ -406,13 +352,13 @@ app.get('/api/users', authenticateRequest, requireAdmin, async (_req: Authentica
 app.post('/api/users/invite', authenticateRequest, requireAdmin, async (req: AuthenticatedRequest, res) => {
   const { ime, email, password, role } = req.body ?? {};
 
-  if (!ime || typeof ime !== 'string' || !ime.trim()) {
+  if (!isNonEmptyString(ime)) {
     return res.status(400).json({ message: 'Ime je obavezno.' });
   }
-  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!isValidEmail(email)) {
     return res.status(400).json({ message: 'Neispravna email adresa.' });
   }
-  if (!password || typeof password !== 'string' || password.length < 8) {
+  if (!isValidPassword(password)) {
     return res.status(400).json({ message: 'Lozinka mora imati najmanje 8 znakova.' });
   }
 
@@ -467,15 +413,15 @@ app.delete('/api/users/:id', authenticateRequest, requireAdmin, async (req: Auth
 app.post('/api/auth/register', async (req, res) => {
   const { ime, email, password } = req.body ?? {};
 
-  if (!ime || typeof ime !== 'string' || !ime.trim()) {
+  if (!isNonEmptyString(ime)) {
     return res.status(400).json({ message: 'Ime je obavezno.' });
   }
 
-  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!isValidEmail(email)) {
     return res.status(400).json({ message: 'Neispravna email adresa.' });
   }
 
-  if (!password || typeof password !== 'string' || password.length < 8) {
+  if (!isValidPassword(password)) {
     return res.status(400).json({ message: 'Lozinka mora imati najmanje 8 znakova.' });
   }
 
@@ -533,11 +479,11 @@ app.post('/api/auth/login', async (req, res) => {
 app.put('/api/auth/profile', authenticateRequest, async (req: AuthenticatedRequest, res) => {
   const { ime, email } = req.body ?? {};
 
-  if (!ime || typeof ime !== 'string' || !ime.trim()) {
+  if (!isNonEmptyString(ime)) {
     return res.status(400).json({ message: 'Ime je obavezno.' });
   }
 
-  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!isValidEmail(email)) {
     return res.status(400).json({ message: 'Neispravna email adresa.' });
   }
 
@@ -782,11 +728,16 @@ app.delete('/api/cameras/:id', authenticateRequest, (req: AuthenticatedRequest, 
   res.json({ message: 'Kamera uspjesno obrisana.' });
 });
 
-app.listen(PORT, async () => {
-  try {
-    await pool.query('SELECT 1');
-    console.log(`Backend pokrenut: http://localhost:${PORT} (DB OK)`);
-  } catch (err) {
-    console.error('Backend pokrenut ali DB konekcija ne radi:', err);
-  }
-});
+// Server se pokreće samo u normalnom radu; pod testovima (Vitest) izvozimo app bez slušanja.
+if (!IS_TEST) {
+  app.listen(PORT, async () => {
+    try {
+      await pool.query('SELECT 1');
+      console.log(`Backend pokrenut: http://localhost:${PORT} (DB OK)`);
+    } catch (err) {
+      console.error('Backend pokrenut ali DB konekcija ne radi:', err);
+    }
+  });
+}
+
+export { app };
