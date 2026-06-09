@@ -16,6 +16,7 @@ type Camera = {
   resolution: string;
   lastSeen: string;
   ip: string;
+  streamUrl?: string | null;
 };
 
 type FilterStatus = 'all' | 'online' | 'offline';
@@ -300,7 +301,7 @@ function CamerasPage() {
         onClose={() => { setIsFormOpen(false); setEditingCamera(null); }}
         onSubmit={handleFormSubmit}
         isEdit={!!editingCamera}
-        initialData={editingCamera ? { name: editingCamera.name, location: editingCamera.location, streamUrl: '' } : null}
+        initialData={editingCamera ? { name: editingCamera.name, location: editingCamera.location, streamUrl: editingCamera.streamUrl ?? '' } : null}
       />
 
       {/* Modal za potvrdu brisanja */}

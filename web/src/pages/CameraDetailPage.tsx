@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import './CameraDetailPage.css';
-import { apiFetch } from '../lib/api';
-import { clearAuthToken } from '../lib/auth';
+import { apiFetch, API_BASE_URL } from '../lib/api';
+import { clearAuthToken, getAuthToken } from '../lib/auth';
 import { LoadingState, ErrorState } from '../components/DataStates';
 import CameraFormModal from '../components/CameraFormModal';
 import ConfirmModal from '../components/ConfirmModal';
@@ -16,6 +16,8 @@ type Camera = {
   resolution: string;
   lastSeen: string;
   ip: string;
+  // URL na video stream (npr. mobitel kao IP kamera). Ako je prazan, prikazuje se simulacija.
+  streamUrl?: string | null;
 };
 
 /* ===== Komponenta ===== */
@@ -38,6 +40,8 @@ function CameraDetailPage() {
   const [showControls, setShowControls] = useState(true);
   const [currentTime, setCurrentTime] = useState('00:00:00');
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Greška pri dohvatu live streama (mobitel ne emitira, krivi URL, drugi WiFi...)
+  const [streamError, setStreamError] = useState(false);
 
   /* Dohvati podatke o kameri (uz zaštitu od zastarjelog odgovora pri brzoj promjeni id-a) */
   const zahtjevIdRef = useRef(0);
@@ -103,6 +107,11 @@ function CameraDetailPage() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, [camera?.isOnline, isPlaying]);
+
+  /* Resetiraj grešku streama kad se promijeni URL ili kad se prikaz ponovno pokrene */
+  useEffect(() => {
+    setStreamError(false);
+  }, [camera?.streamUrl, isPlaying]);
 
   /* Auto-hide kontrole */
   const resetControlsTimer = useCallback(() => {
@@ -242,8 +251,30 @@ function CameraDetailPage() {
             onMouseEnter={resetControlsTimer}
             onMouseLeave={() => setShowControls(false)}
           >
-            {/* Animirani grid efekt - simulacija video feeda */}
-            {camera.isOnline && (
+            {/* Live prijenos s mobitela: MJPEG stream se prikazuje izravno u <img> tagu.
+                Pauza ga zaustavi (skidanjem elementa s ekrana), čime se zatvara veza. */}
+            {camera.isOnline && camera.streamUrl && isPlaying && !streamError && (
+              <img
+                className="video-feed-live"
+                src={`${API_BASE_URL}/api/cameras/${camera.id}/stream?token=${encodeURIComponent(getAuthToken() ?? '')}`}
+                alt={`Live prijenos kamere ${camera.name}`}
+                onError={() => setStreamError(true)}
+              />
+            )}
+
+            {/* Poruka ako stream nije dostupan (mobitel ne emitira, krivi URL, drugi WiFi...) */}
+            {camera.isOnline && camera.streamUrl && isPlaying && streamError && (
+              <div className="video-stream-error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="video-offline-icon">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+                <p className="video-offline-text">Stream nedostupan</p>
+                <p className="video-offline-subtext">Provjeri da aplikacija na mobitelu emitira i da je telefon na istom WiFi-ju.</p>
+              </div>
+            )}
+
+            {/* Simulirani feed — prikazuje se samo kad stream URL nije postavljen */}
+            {camera.isOnline && !camera.streamUrl && (
               <div className="video-feed" aria-hidden="true">
                 <div className="video-feed-scanlines"></div>
                 <div className="video-feed-noise"></div>
@@ -430,7 +461,7 @@ function CameraDetailPage() {
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleEditSubmit}
         isEdit
-        initialData={camera ? { name: camera.name, location: camera.location, streamUrl: '' } : null}
+        initialData={camera ? { name: camera.name, location: camera.location, streamUrl: camera.streamUrl ?? '' } : null}
       />
 
       {/* Modal za potvrdu brisanja */}

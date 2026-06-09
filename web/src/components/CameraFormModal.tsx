@@ -22,18 +22,17 @@ function CameraFormModal({ isOpen, onClose, onSubmit, initialData, isEdit }: Cam
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Polja popunjavamo SAMO kad se modal otvori. Namjerno ne ovisimo o `initialData`
+  // referenci: roditelj se može re-renderati (npr. sat na detaljima kamere stvara
+  // novi initialData objekt svake sekunde), što bi inače resetiralo polje dok tipkaš.
   useEffect(() => {
-    if (isOpen && initialData) {
-      setName(initialData.name);
-      setLocation(initialData.location);
-      setStreamUrl(initialData.streamUrl);
-    } else if (isOpen) {
-      setName('');
-      setLocation('');
-      setStreamUrl('');
-    }
+    if (!isOpen) return;
+    setName(initialData?.name ?? '');
+    setLocation(initialData?.location ?? '');
+    setStreamUrl(initialData?.streamUrl ?? '');
     setError('');
-  }, [isOpen, initialData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -108,12 +107,15 @@ function CameraFormModal({ isOpen, onClose, onSubmit, initialData, isEdit }: Cam
               id="camera-stream"
               type="text"
               className="modal-input"
-              placeholder="rtsp://192.168.1.100:554/stream (opcionalno)"
+              placeholder="npr. http://192.168.1.50:8080/video (opcionalno)"
               value={streamUrl}
               onChange={(e) => setStreamUrl(e.target.value)}
               disabled={isSubmitting}
             />
-            <span className="modal-hint">Opcionalno — URL za RTSP ili HTTP video stream.</span>
+            <span className="modal-hint">
+              Opcionalno — HTTP/MJPEG stream (npr. mobitel kao IP kamera). Ako app traži lozinku,
+              upiši ju u URL: <code>http://korisnik:lozinka@IP:port/video</code>. Prazno = simulacija.
+            </span>
           </div>
 
           <div className="modal-actions">
