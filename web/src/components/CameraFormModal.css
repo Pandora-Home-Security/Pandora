@@ -185,6 +185,23 @@
   background: var(--accent-hover);
 }
 
+/* ===== Toggle u formi ===== */
+.modal-field-toggle {
+  gap: 0.5rem;
+}
+
+.modal-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-toggle-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 520px) {
   .modal-backdrop {

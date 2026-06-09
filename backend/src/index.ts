@@ -675,8 +675,21 @@ app.get('/api/cameras/:id/stream', async (req: Request, res: Response) => {
 
 /* ===== CRUD kamere ===== */
 
+app.patch('/api/cameras/:id/toggle', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const result = await pool.query(
+    `UPDATE cameras SET is_online = NOT is_online, last_seen = NOW()
+     WHERE id = $1
+     RETURNING ${CAMERA_SELECT}`,
+    [req.params.id],
+  );
+  if (result.rows.length === 0) {
+    return res.status(404).json({ message: 'Kamera nije pronadena.' });
+  }
+  res.json({ camera: result.rows[0] });
+});
+
 app.post('/api/cameras', authenticateRequest, async (req: AuthenticatedRequest, res) => {
-  const { name, location, streamUrl } = req.body ?? {};
+  const { name, location, streamUrl, isOnline } = req.body ?? {};
 
   if (!name || typeof name !== 'string' || !name.trim()) {
     return res.status(400).json({ message: 'Naziv kamere je obavezan.' });
@@ -687,12 +700,13 @@ app.post('/api/cameras', authenticateRequest, async (req: AuthenticatedRequest, 
   }
 
   const stream = typeof streamUrl === 'string' && streamUrl.trim() ? streamUrl.trim() : null;
+  const online = isOnline === true;
 
   const result = await pool.query(
-    `INSERT INTO cameras (name, location, stream_url)
-     VALUES ($1, $2, $3)
+    `INSERT INTO cameras (name, location, stream_url, is_online)
+     VALUES ($1, $2, $3, $4)
      RETURNING ${CAMERA_SELECT}`,
-    [name.trim(), location.trim(), stream],
+    [name.trim(), location.trim(), stream, online],
   );
 
   res.status(201).json({ message: 'Kamera uspjesno dodana.', camera: result.rows[0] });

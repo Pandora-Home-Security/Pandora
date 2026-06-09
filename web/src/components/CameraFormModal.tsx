@@ -5,6 +5,7 @@ type CameraFormData = {
   name: string;
   location: string;
   streamUrl: string;
+  isOnline?: boolean;
 };
 
 type CameraFormModalProps = {
@@ -19,6 +20,7 @@ function CameraFormModal({ isOpen, onClose, onSubmit, initialData, isEdit }: Cam
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [streamUrl, setStreamUrl] = useState('');
+  const [isOnline, setIsOnline] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,6 +32,7 @@ function CameraFormModal({ isOpen, onClose, onSubmit, initialData, isEdit }: Cam
     setName(initialData?.name ?? '');
     setLocation(initialData?.location ?? '');
     setStreamUrl(initialData?.streamUrl ?? '');
+    setIsOnline(initialData?.isOnline ?? false);
     setError('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -51,7 +54,7 @@ function CameraFormModal({ isOpen, onClose, onSubmit, initialData, isEdit }: Cam
 
     setIsSubmitting(true);
     try {
-      await onSubmit({ name: name.trim(), location: location.trim(), streamUrl: streamUrl.trim() });
+      await onSubmit({ name: name.trim(), location: location.trim(), streamUrl: streamUrl.trim(), isOnline });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Doslo je do greske.');
     } finally {
@@ -117,6 +120,23 @@ function CameraFormModal({ isOpen, onClose, onSubmit, initialData, isEdit }: Cam
               upiši ju u URL: <code>http://korisnik:lozinka@IP:port/video</code>. Prazno = simulacija.
             </span>
           </div>
+
+          {!isEdit && (
+            <div className="modal-field modal-field-toggle">
+              <label className="modal-label">Status kamere</label>
+              <div className="modal-toggle-row">
+                <button
+                  type="button"
+                  className={`camera-toggle ${isOnline ? 'camera-toggle-on' : ''}`}
+                  onClick={() => setIsOnline(!isOnline)}
+                  disabled={isSubmitting}
+                >
+                  <span className="camera-toggle-knob" />
+                </button>
+                <span className="modal-toggle-label">{isOnline ? 'Online (Live)' : 'Offline'}</span>
+              </div>
+            </div>
+          )}
 
           <div className="modal-actions">
             <button type="button" className="modal-btn modal-btn-cancel" onClick={onClose} disabled={isSubmitting}>

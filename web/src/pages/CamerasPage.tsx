@@ -116,7 +116,7 @@ function CamerasPage() {
   };
 
   /* Submit forme (dodaj / uredi) */
-  const handleFormSubmit = async (data: { name: string; location: string; streamUrl: string }) => {
+  const handleFormSubmit = async (data: { name: string; location: string; streamUrl: string; isOnline?: boolean }) => {
     if (editingCamera) {
       const response = await apiFetch(`/api/cameras/${editingCamera.id}`, {
         method: 'PUT',
@@ -138,6 +138,23 @@ function CamerasPage() {
     setIsFormOpen(false);
     setEditingCamera(null);
     await loadCameras();
+  };
+
+  /* Toggle online/offline */
+  const handleToggle = async (e: React.MouseEvent, camera: Camera) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const response = await apiFetch(`/api/cameras/${camera.id}/toggle`, {
+        method: 'PATCH',
+        includeAuth: true,
+      });
+      if (!response.ok) return;
+      const result = await response.json();
+      setCameras((prev) =>
+        prev.map((c) => (c.id === camera.id ? result.camera : c)),
+      );
+    } catch { /* ignore */ }
   };
 
   /* Potvrdi brisanje */
@@ -273,7 +290,14 @@ function CamerasPage() {
                   <div className="camera-info">
                     <div className="camera-info-top">
                       <h3 className="camera-name">{camera.name}</h3>
-                      <span className={`camera-status-dot ${camera.isOnline ? 'camera-status-online' : 'camera-status-offline'}`} />
+                      <button
+                        type="button"
+                        className={`camera-toggle ${camera.isOnline ? 'camera-toggle-on' : ''}`}
+                        onClick={(e) => handleToggle(e, camera)}
+                        title={camera.isOnline ? 'Prebaci offline' : 'Prebaci online'}
+                      >
+                        <span className="camera-toggle-knob" />
+                      </button>
                     </div>
                     <div className="camera-meta">
                       <span className="camera-meta-item">
@@ -301,7 +325,7 @@ function CamerasPage() {
         onClose={() => { setIsFormOpen(false); setEditingCamera(null); }}
         onSubmit={handleFormSubmit}
         isEdit={!!editingCamera}
-        initialData={editingCamera ? { name: editingCamera.name, location: editingCamera.location, streamUrl: editingCamera.streamUrl ?? '' } : null}
+        initialData={editingCamera ? { name: editingCamera.name, location: editingCamera.location, streamUrl: editingCamera.streamUrl ?? '', isOnline: editingCamera.isOnline } : null}
       />
 
       {/* Modal za potvrdu brisanja */}
