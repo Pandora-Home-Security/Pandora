@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import http from 'http';
+import https from 'https';
 import { Pool } from 'pg';
 import type { NextFunction, Request, Response } from 'express';
 import { signToken, verifyToken } from './lib/token';
@@ -540,55 +542,35 @@ app.put('/api/auth/password', authenticateRequest, async (req: AuthenticatedRequ
   return res.json({ message: 'Lozinka uspješno promijenjena.' });
 });
 
-/* ===== Mock alarmi ===== */
+/* ===== Alarmi (baza) ===== */
 type AlarmType = 'motion' | 'sound' | 'offline' | 'door' | 'temp';
+const VALID_ALARM_TYPES: AlarmType[] = ['motion', 'sound', 'offline', 'door', 'temp'];
 
-type MockAlarm = {
-  id: string;
-  type: AlarmType;
-  camera: string;
-  message: string;
-  time: string;
-  isRead: boolean;
-};
+// Stupci u obliku koji frontend očekuje (id kao string, is_read -> isRead)
+const ALARM_SELECT = `id::text AS id, type, camera, message, time, is_read AS "isRead"`;
 
-const mockAlarms: MockAlarm[] = [
-  { id: '1',  type: 'motion',  camera: 'Ulazna vrata',        message: 'Pokret detektiran',            time: '2026-04-18T10:25:00Z', isRead: false },
-  { id: '2',  type: 'sound',   camera: 'Dnevni boravak',      message: 'Detektiran glasan zvuk',        time: '2026-04-18T09:40:00Z', isRead: false },
-  { id: '3',  type: 'offline', camera: 'Garaža',              message: 'Kamera izgubila vezu',          time: '2026-04-18T08:15:00Z', isRead: false },
-  { id: '4',  type: 'door',    camera: 'Stražnje dvorište',   message: 'Vrata otvorena',                time: '2026-04-17T22:30:00Z', isRead: false },
-  { id: '5',  type: 'temp',    camera: 'Spremište',           message: 'Temperatura previsoka',         time: '2026-04-17T18:05:00Z', isRead: true  },
-  { id: '6',  type: 'motion',  camera: 'Hodnik - 1. kat',    message: 'Pokret detektiran',             time: '2026-04-17T14:20:00Z', isRead: true  },
-  { id: '7',  type: 'offline', camera: 'Spremište',           message: 'Kamera izgubila vezu',          time: '2026-04-17T11:00:00Z', isRead: true  },
-  { id: '8',  type: 'sound',   camera: 'Garaža',              message: 'Detektiran glasan zvuk',        time: '2026-04-16T23:50:00Z', isRead: true  },
-  { id: '9',  type: 'motion',  camera: 'Stražnje dvorište',   message: 'Pokret detektiran',             time: '2026-04-16T19:10:00Z', isRead: true  },
-  { id: '10', type: 'door',    camera: 'Ulazna vrata',        message: 'Vrata otvorena dulje od 5 min', time: '2026-04-16T07:45:00Z', isRead: true  },
-];
-
-app.get('/api/alarms', authenticateRequest, (_req: AuthenticatedRequest, res) => {
-  const sorted = [...mockAlarms].sort(
-    (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
-  );
-  res.json({ alarms: sorted });
+app.get('/api/alarms', authenticateRequest, async (_req: AuthenticatedRequest, res) => {
+  const result = await pool.query(`SELECT ${ALARM_SELECT} FROM alarms ORDER BY time DESC`);
+  res.json({ alarms: result.rows });
 });
 
-app.patch('/api/alarms/read-all', authenticateRequest, (_req: AuthenticatedRequest, res) => {
-  mockAlarms.forEach((a) => { a.isRead = true; });
+app.patch('/api/alarms/read-all', authenticateRequest, async (_req: AuthenticatedRequest, res) => {
+  await pool.query('UPDATE alarms SET is_read = TRUE WHERE is_read = FALSE');
   res.json({ message: 'Svi alarmi označeni kao pročitani.' });
 });
 
-app.patch('/api/alarms/:id/read', authenticateRequest, (req: AuthenticatedRequest, res) => {
-  const alarm = mockAlarms.find((a) => a.id === req.params.id);
-  if (!alarm) {
+app.patch('/api/alarms/:id/read', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const result = await pool.query(
+    `UPDATE alarms SET is_read = TRUE WHERE id = $1 RETURNING ${ALARM_SELECT}`,
+    [req.params.id],
+  );
+  if (result.rows.length === 0) {
     return res.status(404).json({ message: 'Alarm nije pronađen.' });
   }
-  alarm.isRead = true;
-  res.json({ alarm });
+  res.json({ alarm: result.rows[0] });
 });
 
 /* ===== Simulacija novih alarma (za testiranje real-time notifikacija) ===== */
-let nextAlarmId = 11; // prvi novi alarm dobiva id 11 (postojece ih je 10)
-
 const simulationPool: { type: AlarmType; camera: string; message: string }[] = [
   { type: 'motion',  camera: 'Ulazna vrata',      message: 'Pokret detektiran' },
   { type: 'sound',   camera: 'Dnevni boravak',    message: 'Detektiran glasan zvuk' },
@@ -598,68 +580,102 @@ const simulationPool: { type: AlarmType; camera: string; message: string }[] = [
   { type: 'motion',  camera: 'Hodnik - 1. kat',   message: 'Pokret detektiran' },
 ];
 
-app.post('/api/alarms/simulate', authenticateRequest, (req: AuthenticatedRequest, res) => {
+app.post('/api/alarms/simulate', authenticateRequest, async (req: AuthenticatedRequest, res) => {
   const body = req.body ?? {};
   const pick = simulationPool[Math.floor(Math.random() * simulationPool.length)];
 
-  const type: AlarmType = body.type && ['motion', 'sound', 'offline', 'door', 'temp'].includes(body.type)
-    ? body.type
-    : pick.type;
-
+  const type: AlarmType = body.type && VALID_ALARM_TYPES.includes(body.type) ? body.type : pick.type;
   const camera = typeof body.camera === 'string' && body.camera.trim() ? body.camera.trim() : pick.camera;
   const message = typeof body.message === 'string' && body.message.trim() ? body.message.trim() : pick.message;
 
-  const alarm: MockAlarm = {
-    id: String(nextAlarmId++),
-    type,
-    camera,
-    message,
-    time: new Date().toISOString(),
-    isRead: false,
-  };
-
-  mockAlarms.push(alarm);
-  res.status(201).json({ alarm });
+  // Vrijeme i id postavlja baza (DEFAULT NOW(), BIGSERIAL)
+  const result = await pool.query(
+    `INSERT INTO alarms (type, camera, message) VALUES ($1, $2, $3) RETURNING ${ALARM_SELECT}`,
+    [type, camera, message],
+  );
+  res.status(201).json({ alarm: result.rows[0] });
 });
 
-/* ===== Mock kamere ===== */
-type MockCamera = {
-  id: string;
-  name: string;
-  location: string;
-  isOnline: boolean;
-  resolution: string;
-  lastSeen: string;
-  ip: string;
-};
+/* ===== Kamere (baza) ===== */
+// Stupci u obliku koji frontend očekuje (id kao string, snake_case -> camelCase)
+const CAMERA_SELECT =
+  `id::text AS id, name, location, is_online AS "isOnline", resolution, last_seen AS "lastSeen", ip, stream_url AS "streamUrl"`;
 
-const mockCameras: MockCamera[] = [
-  { id: '1', name: 'Ulazna vrata', location: 'Ulaz', isOnline: true, resolution: '1920x1080', lastSeen: '2026-04-14T10:30:00Z', ip: '192.168.1.101' },
-  { id: '2', name: 'Dnevni boravak', location: 'Prizemlje', isOnline: true, resolution: '1920x1080', lastSeen: '2026-04-14T10:30:00Z', ip: '192.168.1.102' },
-  { id: '3', name: 'Garaza', location: 'Garaza', isOnline: false, resolution: '1280x720', lastSeen: '2026-04-13T18:45:00Z', ip: '192.168.1.103' },
-  { id: '4', name: 'Straznje dvoriste', location: 'Dvoriste', isOnline: true, resolution: '1920x1080', lastSeen: '2026-04-14T10:30:00Z', ip: '192.168.1.104' },
-  { id: '5', name: 'Spremiste', location: 'Prizemlje', isOnline: false, resolution: '1280x720', lastSeen: '2026-04-12T09:15:00Z', ip: '192.168.1.105' },
-  { id: '6', name: 'Hodnik - 1. kat', location: '1. kat', isOnline: true, resolution: '1920x1080', lastSeen: '2026-04-14T10:30:00Z', ip: '192.168.1.106' },
-];
-
-app.get('/api/cameras', authenticateRequest, (req: AuthenticatedRequest, res) => {
+app.get('/api/cameras', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const result = await pool.query(`SELECT ${CAMERA_SELECT} FROM cameras ORDER BY id`);
   res.json({
     user: req.user,
-    cameras: mockCameras,
+    cameras: result.rows,
   });
 });
 
-app.get('/api/cameras/:id', authenticateRequest, (req: AuthenticatedRequest, res) => {
-  const camera = mockCameras.find((c) => c.id === req.params.id);
-  if (!camera) {
+app.get('/api/cameras/:id', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const result = await pool.query(`SELECT ${CAMERA_SELECT} FROM cameras WHERE id = $1`, [req.params.id]);
+  if (result.rows.length === 0) {
     return res.status(404).json({ message: 'Kamera nije pronadena.' });
   }
-  res.json({ camera });
+  res.json({ camera: result.rows[0] });
+});
+
+/* ===== Proxy za live MJPEG stream =====
+   Preglednik ne može slati Basic Auth ni JWT kroz <img>, pa stream provlačimo kroz
+   backend: on se (po potrebi) prijavi na izvor — podaci se čitaju iz stream URL-a,
+   npr. http://admin:admin@192.168.0.13:8081/video — i prosljeđuje sliku pregledniku.
+   Token korisnika dolazi kao query param jer <img> ne može slati Authorization header. */
+app.get('/api/cameras/:id/stream', async (req: Request, res: Response) => {
+  const token = typeof req.query.token === 'string' ? req.query.token : '';
+  if (!verifyToken(token)) {
+    return res.status(401).end();
+  }
+
+  const result = await pool.query<{ stream_url: string | null }>(
+    'SELECT stream_url FROM cameras WHERE id = $1',
+    [req.params.id],
+  );
+  const streamUrl = result.rows[0]?.stream_url;
+  if (!streamUrl) {
+    return res.status(404).end();
+  }
+
+  let target: URL;
+  try {
+    target = new URL(streamUrl);
+  } catch {
+    return res.status(400).end();
+  }
+
+  // Korisničko ime/lozinku iz URL-a šaljemo kao Basic Auth prema izvoru streama
+  const headers: Record<string, string> = {};
+  if (target.username || target.password) {
+    const creds = `${decodeURIComponent(target.username)}:${decodeURIComponent(target.password)}`;
+    headers.Authorization = `Basic ${Buffer.from(creds).toString('base64')}`;
+    target.username = '';
+    target.password = '';
+  }
+
+  const client = target.protocol === 'https:' ? https : http;
+  const upstream = client.get(target.toString(), { headers }, (up) => {
+    if (up.statusCode !== 200) {
+      res.status(up.statusCode ?? 502).end();
+      up.resume(); // isprazni odgovor da se veza uredno zatvori
+      return;
+    }
+    res.setHeader('Content-Type', up.headers['content-type'] ?? 'multipart/x-mixed-replace');
+    res.setHeader('Cache-Control', 'no-store');
+    up.pipe(res);
+  });
+
+  upstream.on('error', () => {
+    if (!res.headersSent) res.status(502).end();
+  });
+
+  // Kad preglednik prekine vezu (pauza, zatvaranje stranice), zaustavi i dohvat s izvora
+  req.on('close', () => upstream.destroy());
 });
 
 /* ===== CRUD kamere ===== */
 
-app.post('/api/cameras', authenticateRequest, (req: AuthenticatedRequest, res) => {
+app.post('/api/cameras', authenticateRequest, async (req: AuthenticatedRequest, res) => {
   const { name, location, streamUrl } = req.body ?? {};
 
   if (!name || typeof name !== 'string' || !name.trim()) {
@@ -670,61 +686,69 @@ app.post('/api/cameras', authenticateRequest, (req: AuthenticatedRequest, res) =
     return res.status(400).json({ message: 'Lokacija je obavezna.' });
   }
 
-  const maxId = mockCameras.reduce((max, c) => Math.max(max, Number(c.id)), 0);
-  const newId = String(maxId + 1);
+  const stream = typeof streamUrl === 'string' && streamUrl.trim() ? streamUrl.trim() : null;
 
-  const newCamera: MockCamera = {
-    id: newId,
-    name: name.trim(),
-    location: location.trim(),
-    isOnline: false,
-    resolution: '1920x1080',
-    lastSeen: new Date().toISOString(),
-    ip: `192.168.1.${100 + Number(newId)}`,
-    ...(streamUrl && typeof streamUrl === 'string' ? { streamUrl: streamUrl.trim() } : {}),
-  };
+  const result = await pool.query(
+    `INSERT INTO cameras (name, location, stream_url)
+     VALUES ($1, $2, $3)
+     RETURNING ${CAMERA_SELECT}`,
+    [name.trim(), location.trim(), stream],
+  );
 
-  mockCameras.push(newCamera);
-  res.status(201).json({ message: 'Kamera uspjesno dodana.', camera: newCamera });
+  res.status(201).json({ message: 'Kamera uspjesno dodana.', camera: result.rows[0] });
 });
 
-app.put('/api/cameras/:id', authenticateRequest, (req: AuthenticatedRequest, res) => {
-  const index = mockCameras.findIndex((c) => c.id === req.params.id);
-  if (index === -1) {
+app.put('/api/cameras/:id', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const existing = await pool.query('SELECT id FROM cameras WHERE id = $1', [req.params.id]);
+  if (existing.rows.length === 0) {
     return res.status(404).json({ message: 'Kamera nije pronadena.' });
   }
 
   const { name, location, streamUrl } = req.body ?? {};
+  const updates: string[] = [];
+  const values: (string | null)[] = [];
+  let paramIndex = 1;
 
   if (name !== undefined) {
     if (typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ message: 'Naziv kamere ne moze biti prazan.' });
     }
-    mockCameras[index].name = name.trim();
+    updates.push(`name = $${paramIndex++}`);
+    values.push(name.trim());
   }
 
   if (location !== undefined) {
     if (typeof location !== 'string' || !location.trim()) {
       return res.status(400).json({ message: 'Lokacija ne moze biti prazna.' });
     }
-    mockCameras[index].location = location.trim();
+    updates.push(`location = $${paramIndex++}`);
+    values.push(location.trim());
   }
 
   if (streamUrl !== undefined) {
-    (mockCameras[index] as MockCamera & { streamUrl?: string }).streamUrl =
-      typeof streamUrl === 'string' && streamUrl.trim() ? streamUrl.trim() : undefined;
+    updates.push(`stream_url = $${paramIndex++}`);
+    values.push(typeof streamUrl === 'string' && streamUrl.trim() ? streamUrl.trim() : null);
   }
 
-  res.json({ message: 'Kamera uspjesno azurirana.', camera: mockCameras[index] });
+  if (updates.length === 0) {
+    return res.status(400).json({ message: 'Nema polja za ažuriranje.' });
+  }
+
+  values.push(req.params.id);
+  const result = await pool.query(
+    `UPDATE cameras SET ${updates.join(', ')} WHERE id = $${paramIndex}
+     RETURNING ${CAMERA_SELECT}`,
+    values,
+  );
+
+  res.json({ message: 'Kamera uspjesno azurirana.', camera: result.rows[0] });
 });
 
-app.delete('/api/cameras/:id', authenticateRequest, (req: AuthenticatedRequest, res) => {
-  const index = mockCameras.findIndex((c) => c.id === req.params.id);
-  if (index === -1) {
+app.delete('/api/cameras/:id', authenticateRequest, async (req: AuthenticatedRequest, res) => {
+  const result = await pool.query('DELETE FROM cameras WHERE id = $1 RETURNING id', [req.params.id]);
+  if (result.rows.length === 0) {
     return res.status(404).json({ message: 'Kamera nije pronadena.' });
   }
-
-  mockCameras.splice(index, 1);
   res.json({ message: 'Kamera uspjesno obrisana.' });
 });
 
