@@ -62,3 +62,19 @@ CREATE TABLE IF NOT EXISTS device_events (
 
 CREATE INDEX IF NOT EXISTS device_events_device_idx ON device_events (device_id);
 CREATE INDEX IF NOT EXISTS device_events_time_idx   ON device_events (created_at DESC);
+
+/* ===== Kamere ===== */
+
+CREATE TABLE IF NOT EXISTS cameras (
+    id          BIGSERIAL   PRIMARY KEY,
+    name        TEXT        NOT NULL,
+    location    TEXT        NOT NULL,
+    is_online   BOOLEAN     NOT NULL DEFAULT FALSE,
+    resolution  TEXT        NOT NULL DEFAULT '1920x1080',
+    last_seen   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    ip          TEXT,
+    stream_url  TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS cameras_online_idx ON cameras (is_online);

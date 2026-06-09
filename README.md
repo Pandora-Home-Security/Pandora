@@ -128,6 +128,13 @@ Tražit će lozinku `postgres` superusera. Očekivani output: `CREATE ROLE`, `CR
 ```
 Lozinka: `pandora_dev`. Output: `CREATE TABLE`, `CREATE INDEX`.
 
+Zatim učitaj testne podatke (seed je siguran za višekratno pokretanje — umetne samo ako je tablica prazna):
+```bash
+"C:\Program Files\PostgreSQL\18\bin\psql.exe" -U pandora_app -d pandora -f db/seed_devices.sql
+"C:\Program Files\PostgreSQL\18\bin\psql.exe" -U pandora_app -d pandora -f db/seed_cameras.sql
+"C:\Program Files\PostgreSQL\18\bin\psql.exe" -U pandora_app -d pandora -f db/seed_alarms.sql
+```
+
 ### 5) Kopiraj env file
 ```bash
 cp .env.example .env

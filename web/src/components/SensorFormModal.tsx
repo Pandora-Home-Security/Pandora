@@ -34,20 +34,17 @@ function SensorFormModal({ isOpen, onClose, onSubmit, initialData, isEdit }: Sen
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Polja popunjavamo SAMO kad se modal otvori — da re-render roditelja ne resetira
+  // unos dok korisnik tipka (isti razlog kao u CameraFormModal).
   useEffect(() => {
-    if (isOpen && initialData) {
-      setName(initialData.name);
-      setType(initialData.type);
-      setLocation(initialData.location);
-      setStatus(initialData.status ?? 'active');
-    } else if (isOpen) {
-      setName('');
-      setType('door');
-      setLocation('');
-      setStatus('active');
-    }
+    if (!isOpen) return;
+    setName(initialData?.name ?? '');
+    setType(initialData?.type ?? 'door');
+    setLocation(initialData?.location ?? '');
+    setStatus(initialData?.status ?? 'active');
     setError('');
-  }, [isOpen, initialData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
